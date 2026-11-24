@@ -3,10 +3,14 @@
 **Reproduction/publication update:** the root `justfile` and
 `docs/REPRODUCING.md` now provide the clone-to-install workflow, including private
 Wine/rootfs/bridge builds, native builds, media extraction, per-account deployment,
-headless tests, registration and explicit guarded switching. The native source
-build/synthetic-output smoke test, ReactOS extraction and PE-helper cross-build
-were exercised. Full fresh-device deployment remains unverified: the device was
-unreachable over SSH during packaging. Historical notes below are not installer
+headless tests, registration and explicit guarded switching. Full patched Wine and
+native source builds, runtime packaging, synthetic-output smoke testing, ReactOS
+extraction and PE-helper cross-build passed. `just test-container` also passed a
+fresh Fedora ARM64 account install (different home and UID), ReactOS prefix/cursor
+creation, shell/folder assertions and headless Log Off with those new artifacts.
+It caught staging ownership and cursor-flag ordering bugs, now regression-tested;
+all 18 unit tests pass. Full fresh-device deployment remains unverified: the device
+was unreachable over SSH during packaging. Historical notes below are not installer
 defaults. Public history is redacted/anonymized; old commit IDs may not resolve.
 
 **For the user and Claude / the next agent. Updated 2026-11-23.**

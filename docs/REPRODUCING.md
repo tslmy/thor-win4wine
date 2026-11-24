@@ -204,11 +204,27 @@ SDDM files or reset Steam's mode configuration.
 
 The original installation passed per-shell headless and physical-session checks,
 including Win7 → XP → ReactOS → Win7 switching and visible upper-output cursor
-screenshots. The new build-host recipes have source/unit/syntax checks, a fresh
-native build and a GPU-less synthetic-output smoke test. The device was unreachable
-during packaging, so a **fresh full
-clone-to-device installation has not yet been validated**. Treat this as a
-reviewable experimental reproduction workflow, not a guarantee on every Thor.
+screenshots. The new reproduction workflow has now passed:
+
+- 18 unit tests, Python/shell syntax checks, tracked-file auditing and full-history
+  secret scanning.
+- The complete patched Wine/bridge source build, private-userspace export and
+  hash-checked Box64 packaging; the packaged Wine patch digest matches the pin.
+- A fresh native compositor build and GPU-less synthetic-output smoke test.
+- The pinned ReactOS release download, hash check and extraction.
+- `just test-container`: installation into a fresh Fedora ARM64 account named
+  `player` (UID 2001), ReactOS prefix/cursor creation, genuine shell desktop/taskbar
+  ownership, folder browsing and headless Log Off using the newly built runtime.
+
+That fresh-account test caught and fixed both an ownership error in its staging
+fixture and incorrect positional flag ordering for the upstream cursor extractor.
+The test uses no existing developer prefix, SSH connection, SDDM session or DRM
+device. It validates the fresh ReactOS software path, **not** physical display/input
+behavior or fresh XP/Win7 installations.
+
+The Thor was unreachable during packaging, so a **fresh full clone-to-device
+installation has not yet been validated**. Treat this as a reviewable experimental
+reproduction workflow, not a guarantee on every Thor.
 
 Audio, controller integration, suspend/resume, portals/polkit, full Aero, and
 physical external-cursor validation still have gaps. See the variant docs for
