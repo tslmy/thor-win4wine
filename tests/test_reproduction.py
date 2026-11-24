@@ -116,6 +116,14 @@ class ReproductionTests(unittest.TestCase):
             '!containers/build-wine.sh', '!containers/smoke-native.sh',
             '!containers/test.Dockerfile', '!containers/test-runtime.sh'])
 
+    def test_container_stages_home_files_as_the_unprivileged_account(self):
+        script = (ROOT / 'containers/test-runtime.sh').read_text()
+        self.assertIn('runuser -u player -- mkdir -p /home/player/.local/state/thor-bootstrap', script)
+        self.assertIn('runuser -u player -- cp /artifacts/native/assets-reactos.tar.gz', script)
+        for line in script.splitlines():
+            if line.startswith(('mkdir ', 'cp ', 'chown ')):
+                self.assertNotIn('/home/player/', line, 'Root must not create an unwritable parent in the test home')
+
     def test_history_scrubber_redacts_every_occurrence(self):
         value = history.scrub(b'private/path and private/path', {'private/path': 'public/example'})
         self.assertEqual(value, b'public/example and public/example')

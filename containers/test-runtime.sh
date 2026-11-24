@@ -1,6 +1,13 @@
 #!/bin/bash
 # Fresh Fedora ARM64 account test. No DRM, SSH, SDDM or host home is available.
 set -euo pipefail
+report_failure() {
+    result=$?
+    if [[ $result != 0 && -d /home/player/.local/state ]]; then
+        find /home/player/.local/state -type f -name '*.log' -print -exec tail -n 60 {} \;
+    fi
+}
+trap report_failure EXIT
 mkdir -p /stage /run/user/2001
 chmod 700 /run/user/2001
 chown player:player /run/user/2001
@@ -14,9 +21,8 @@ for name in labwc-arm64.tar.gz native-support.tar.gz; do
 done
 runuser -u player -- env XDG_RUNTIME_DIR=/run/user/2001 \
     python3 /tools/install-user.py /stage
-mkdir -p /home/player/.local/state/thor-bootstrap
-cp /artifacts/native/assets-reactos.tar.gz /home/player/.local/state/thor-bootstrap/
-chown -R player:player /home/player/.local/state/thor-bootstrap
+runuser -u player -- mkdir -p /home/player/.local/state/thor-bootstrap
+runuser -u player -- cp /artifacts/native/assets-reactos.tar.gz /home/player/.local/state/thor-bootstrap/
 runuser -u player -- env XDG_RUNTIME_DIR=/run/user/2001 \
     PYTHONPATH=/home/player/.local/share/win4wine/python \
     LD_LIBRARY_PATH=/home/player/.local/share/win4wine/labwc/lib \
