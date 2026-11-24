@@ -19,9 +19,9 @@ done
 }
 mkdir -p "$state"
 exec 8>"$XDG_RUNTIME_DIR/win4wine-window.lock"
-flock -n 8 || { echo 'Close the nested ReactOS session before starting the standalone session.' >&2; exit 1; }
+flock -w 20 8 || { echo 'Close the nested ReactOS session before starting the standalone session.' >&2; exit 1; }
 exec 9>"$XDG_RUNTIME_DIR/win4wine-standalone.lock"
-flock -n 9 || { echo 'A standalone session is already running.' >&2; exit 1; }
+flock -w 20 9 || { echo 'A standalone session is already running.' >&2; exit 1; }
 # A new display session must not reuse stale Plasma sockets or toolkit overrides.
 unset DISPLAY WAYLAND_DISPLAY XAUTHORITY SESSION_MANAGER
 unset QT_IM_MODULE GTK_IM_MODULE QT_QPA_PLATFORMTHEME PLASMA_INTEGRATION_USE_PORTAL
@@ -33,6 +33,8 @@ export LD_LIBRARY_PATH="$base/labwc/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:$base/rootfs/usr/bin"
 export LIBSEAT_BACKEND=logind
 export WLR_BACKENDS=drm,libinput
+export WLR_NO_HARDWARE_CURSORS=1
+export XCURSOR_THEME=win4wine-reactos XCURSOR_SIZE=64
 # Only after SDDM has started this seat session: remove lingering desktop units.
 systemctl --user stop graphical-session.target || true
 export WIN4WINE_IPC
