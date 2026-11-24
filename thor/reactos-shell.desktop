@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=ReactOS Shell (win4wine)
+Comment=ReactOS's explorer shell on Wine/WoW64 under Box64 in a fullscreen window
+Exec=/var/home/armada/.local/bin/reactos-shell-window
+Icon=wine
+Categories=System;
+Terminal=false

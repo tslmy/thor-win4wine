@@ -1,0 +1,56 @@
+#!/bin/bash
+# Start win4wine's ReactOS shell inside a fullscreen rootful Xwayland on the current Wayland desktop.
+set -euo pipefail
+rootfs=${WIN4WINE_ROOTFS:-$HOME/.local/share/win4wine/rootfs}
+checkout=$HOME/win4wine
+config=${XDG_CONFIG_HOME:-$HOME/.config}/win4wine/reactos-session.json
+state=$HOME/.local/state/win4wine
+mkdir -p "$state"
+: "${XDG_RUNTIME_DIR:=/run/user/$(id -u)}"; export XDG_RUNTIME_DIR
+# SSH launches should use the existing Plasma session, not a guessed socket.
+if [[ -z ${WAYLAND_DISPLAY:-} ]]; then
+    while IFS='=' read -r key value; do
+        case "$key" in
+            WAYLAND_DISPLAY|XAUTHORITY|DBUS_SESSION_BUS_ADDRESS) export "$key=$value" ;;
+        esac
+    done < <(systemctl --user show-environment)
+fi
+: "${WAYLAND_DISPLAY:?Start Plasma Desktop Mode before opening ReactOS Shell}"
+exec 9>"$XDG_RUNTIME_DIR/win4wine-window.lock"
+flock -n 9 || { echo 'ReactOS Shell is already running.' >&2; exit 1; }
+# A config just for this window: Turn Off Computer / Restart only end the window.
+nested=$XDG_RUNTIME_DIR/win4wine-reactos-window.json
+python3 - "$config" "$nested" <<'PY'
+import json, sys
+c = json.load(open(sys.argv[1]))
+c['shutdown_command'] = None
+c['reboot_command'] = None
+json.dump(c, open(sys.argv[2], 'w'))
+PY
+display=${WIN4WINE_DISPLAY:-}
+if [[ -z $display ]]; then
+    for n in $(seq 10 40); do [[ -e /tmp/.X11-unix/X$n || -e /tmp/.X$n-lock ]] || { display=$n; break; }; done
+fi
+geometry=${WIN4WINE_GEOMETRY:-1280x720}
+xargs=(-fullscreen -hidpi -noreset -nolisten tcp)
+xargs+=(-output "${WIN4WINE_OUTPUT:-DSI-2}")
+[[ -z $geometry ]] || xargs+=(-geometry "$geometry")
+# Do not grab the host shortcuts: Plasma can always close this window.
+Xwayland ":$display" "${xargs[@]}" \
+    >"$state/xwayland.log" 2>&1 &
+xw=$!
+trap 'kill $xw 2>/dev/null || true; wait $xw 2>/dev/null || true' EXIT
+for _ in $(seq 100); do
+    [[ -S /tmp/.X11-unix/X$display ]] && break
+    kill -0 "$xw" 2>/dev/null || { cat "$state/xwayland.log" >&2; exit 1; }
+    sleep 0.1
+done
+[[ -S /tmp/.X11-unix/X$display ]] || { echo 'Xwayland startup timed out.' >&2; exit 1; }
+export DISPLAY=:$display
+unset WAYLAND_DISPLAY XAUTHORITY
+export FEX_ROOTFS=$rootfs
+# Only vendor pure Python Xlib; native GI must match Armada's Python/GLib.
+export PYTHONPATH="$HOME/.local/share/win4wine/python${PYTHONPATH:+:$PYTHONPATH}"
+export PATH="$PATH:$rootfs/usr/bin"
+cd "$checkout"
+python3 "$checkout/session/supervisor.py" --config "$nested" >"$state/window-session.log" 2>&1

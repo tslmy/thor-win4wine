@@ -1,0 +1,12 @@
+# Keep the upstream project as its existing, independent Git checkout.
+/win4wine/
+
+# Runtime artifacts belong on the Thor or in Docker, not in this repository.
+__pycache__/
+*.pyc
+.DS_Store
+*.log
+*.deb
+*.tar
+*.tar.*
+*.zip

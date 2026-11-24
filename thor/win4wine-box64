@@ -1,0 +1,12 @@
+#!/bin/bash
+# Private Box64 entry point for win4wine's patched x86-64 Wine/WoW64 build.
+set -euo pipefail
+base=$HOME/.local/share/win4wine
+install=$HOME/win4wine/.local/wine-install
+program=$(basename "$0")
+case "$program" in wine|wineserver) ;; *) echo 'Install as wine or wineserver.' >&2; exit 1;; esac
+export BOX64_LD_LIBRARY_PATH="$base/rootfs/usr/lib/x86_64-linux-gnu${BOX64_LD_LIBRARY_PATH:+:$BOX64_LD_LIBRARY_PATH}"
+export BOX64_LOG=${BOX64_LOG:-0}
+export WINELOADER="$base/box64-wine/bin/wine"
+export WINESERVER="$base/box64-wine/bin/wineserver"
+exec "$base/box64/usr/local/bin/box64" "$install/bin/$program" "$@"
