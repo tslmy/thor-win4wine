@@ -24,9 +24,19 @@ cli = load('thor_cli', 'tools/thor.py')
 installer = load('user_install', 'thor/install-user.py')
 audit = load('public_audit', 'tools/audit-public.py')
 history = load('public_history', 'tools/rewrite-public-history.py')
+prepare = load('prepare_shell', 'thor/prepare-shell.py')
 
 
 class ReproductionTests(unittest.TestCase):
+    def test_upstream_cursor_cli_argument_order(self):
+        assets, output = Path('/assets'), Path('/icons/theme')
+        self.assertEqual(prepare.cursor_arguments('reactos', assets, output),
+                         ['/assets/resources/user32.dll', '/icons/theme', '--reactos'])
+        self.assertEqual(prepare.cursor_arguments('xp', assets, output),
+                         ['/assets/resources/user32.dll', '/icons/theme'])
+        self.assertEqual(prepare.cursor_arguments('win7', assets, output),
+                         ['--win7', '/assets/cursors/user32.dll', '/assets/cursors', '/icons/theme'])
+
     def test_target_requires_explicit_host(self):
         with patch.dict(os.environ, {}, clear=True), self.assertRaises(SystemExit):
             cli.target()

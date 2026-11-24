@@ -10,6 +10,14 @@ import sys
 import time
 
 
+def cursor_arguments(shell, assets, destination):
+    # Upstream uses positional sys.argv checks, not argparse: flag order matters.
+    if shell == 'win7':
+        return ['--win7', str(assets / 'cursors/user32.dll'), str(assets / 'cursors'), str(destination)]
+    arguments = [str(assets / 'resources/user32.dll'), str(destination)]
+    return arguments + (['--reactos'] if shell == 'reactos' else [])
+
+
 def main(shell):
     if os.geteuid() == 0:
         raise SystemExit('Create prefixes as the ordinary desktop user, never root.')
@@ -81,11 +89,8 @@ def main(shell):
                 except ProcessLookupError:
                     pass
                 xvfb.wait(timeout=20)
-    cursor_args = ([str(assets / 'cursors/user32.dll'), str(assets / 'cursors'), '--win7'] if shell == 'win7'
-                   else [str(assets / 'resources/user32.dll')] + (['--reactos'] if shell == 'reactos' else []))
-    # argparse accepts the --win7 option anywhere, but its three positional arguments stay ordered.
     destination = home / f'.local/share/icons/win4wine-{shell}'
-    subprocess.run(['python3', str(root / 'greeter/cursors.py'), *cursor_args, str(destination)], env=env, check=True)
+    subprocess.run(['python3', str(root / 'greeter/cursors.py'), *cursor_arguments(shell, assets, destination)], env=env, check=True)
     data = json.loads(config.read_text())
     data['cursor_theme'] = f'win4wine-{shell}'
     config.write_text(json.dumps(data, indent=2) + '\n')
