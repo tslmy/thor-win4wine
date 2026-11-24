@@ -5,6 +5,13 @@ base=$HOME/.local/share/win4wine
 state=$HOME/.local/state/win4wine-standalone
 config=${XDG_CONFIG_HOME:-$HOME/.config}/win4wine/reactos-standalone.json
 [[ -x $base/labwc/bin/labwc && -f $config ]] || { echo 'Standalone runtime/config is missing.' >&2; exit 1; }
+for status in /sys/class/drm/card*-DP-*/status; do
+    [[ -r $status ]] || continue
+    if [[ $(cat "$status") == connected ]]; then
+        echo 'Disconnect the external monitor before login while the two-output configuration is being validated.' >&2
+        exit 1
+    fi
+done
 : "${XDG_RUNTIME_DIR:?A logind/SDDM user session is required}"
 [[ -n ${XDG_SEAT:-} && -n ${XDG_VTNR:-} ]] || {
     echo 'Launch this from an SDDM seat session, not directly over SSH.' >&2

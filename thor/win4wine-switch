@@ -1,0 +1,18 @@
+#!/bin/bash
+# User-facing switch; the independent root service survives closing the desktop.
+set -euo pipefail
+[[ $# == 1 ]] || { echo 'Usage: win4wine-switch xp|reactos' >&2; exit 2; }
+case "${1:-}" in xp|reactos) variant=$1 ;; *) echo 'Usage: win4wine-switch xp|reactos' >&2; exit 2;; esac
+for status in /sys/class/drm/card*-DP-*/status; do
+    [[ -r $status ]] || continue
+    if [[ $(cat "$status") == connected ]]; then
+        message='Disconnect the external monitor before switching shells. A three-output test hit a display-driver resource failure and an unexpected reboot; this configuration needs investigation.'
+        echo "$message" >&2
+        if [[ -n ${DISPLAY:-}${WAYLAND_DISPLAY:-} ]] && command -v kdialog >/dev/null; then
+            kdialog --error "$message" --title 'win4wine display safety guard' || true
+        fi
+        exit 1
+    fi
+done
+exec sudo -n systemd-run --collect --unit="win4wine-switch-$variant-$(date +%s%N)" \
+    /usr/bin/python3 /etc/win4wine/switch-win4wine-session.py "$variant"

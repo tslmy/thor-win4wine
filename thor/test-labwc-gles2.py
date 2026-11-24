@@ -26,7 +26,9 @@ with tempfile.TemporaryDirectory(prefix='win4wine-gles2-', dir=os.environ['XDG_R
     ipc.mkdir(mode=0o700)
     output = state / 'test-gles2-outputs.json'
     startup = work / 'startup.sh'
-    startup.write_text(f'#!/bin/sh\nsleep 1\n/usr/bin/timeout 10s /usr/bin/wlr-randr --json > "{output}"\nsleep 1\n')
+    startup.write_text("#!/bin/sh\nsleep 1\nname=$(/usr/bin/wlr-randr --json | python3 -c 'import json,sys; print(json.load(sys.stdin)[0][\"name\"])')\n"
+                       f'/usr/bin/wlr-randr --output "$name" --on\n'
+                       f'/usr/bin/timeout 10s /usr/bin/wlr-randr --json > "{output}"\nsleep 1\n')
     startup.chmod(0o755)
     env = dict(os.environ, XDG_RUNTIME_DIR=str(runtime), WAYLAND_DISPLAY=str(parent_socket),
                WLR_BACKENDS='wayland', WLR_RENDERER='gles2', WIN4WINE_IPC=str(ipc))

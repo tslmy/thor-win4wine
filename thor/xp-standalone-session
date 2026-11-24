@@ -1,0 +1,37 @@
+#!/bin/bash
+# Independent XP session entry point; leaves the ReactOS launchers/config untouched.
+set -euo pipefail
+base=$HOME/.local/share/win4wine
+state=$HOME/.local/state/win4wine-xp
+config=${XDG_CONFIG_HOME:-$HOME/.config}/win4wine/xp-standalone.json
+[[ -x $base/labwc/bin/labwc && -f $config ]] || { echo 'XP runtime/config is missing.' >&2; exit 1; }
+# Gate the known hazardous test condition without touching drivers or saved layouts.
+for status in /sys/class/drm/card*-DP-*/status; do
+    [[ -r $status ]] || continue
+    if [[ $(cat "$status") == connected ]]; then
+        echo 'Disconnect the external DisplayPort monitor before XP login. Multi-output switching is gated after a display-driver failure and unexpected reboot.' >&2
+        exit 1
+    fi
+done
+: "${XDG_RUNTIME_DIR:?An SDDM user session is required}"
+[[ -n ${XDG_SEAT:-} && -n ${XDG_VTNR:-} ]] || { echo 'Launch XP from SDDM, not directly over SSH.' >&2; exit 1; }
+mkdir -p "$state"
+exec 8>"$XDG_RUNTIME_DIR/win4wine-window.lock"
+flock -n 8 || { echo 'Another win4wine shell is running.' >&2; exit 1; }
+exec 9>"$XDG_RUNTIME_DIR/win4wine-standalone.lock"
+flock -n 9 || { echo 'Another standalone shell is running.' >&2; exit 1; }
+unset DISPLAY WAYLAND_DISPLAY XAUTHORITY SESSION_MANAGER
+unset QT_IM_MODULE GTK_IM_MODULE QT_QPA_PLATFORMTHEME PLASMA_INTEGRATION_USE_PORTAL
+unset WIN4WINE_DISPLAY WIN4WINE_GEOMETRY WIN4WINE_OUTPUT WIN4WINE_SHELL WIN4WINE_SWITCHER WIN4WINE_FOLDER_SHELL
+export XDG_CURRENT_DESKTOP=XP-Shell XDG_SESSION_DESKTOP=xp-shell XDG_SESSION_TYPE=wayland
+export PYTHONPATH="$base/python${PYTHONPATH:+:$PYTHONPATH}"
+export FEX_ROOTFS="$base/rootfs"
+export LD_LIBRARY_PATH="$base/labwc/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:$base/rootfs/usr/bin"
+export LIBSEAT_BACKEND=logind WLR_BACKENDS=drm,libinput
+systemctl --user stop graphical-session.target || true
+export WIN4WINE_IPC
+WIN4WINE_IPC=$(mktemp -d "$XDG_RUNTIME_DIR/win4wine-xp-XXXXXX")
+export WIN4WINE_STANDALONE_CONFIG=$config
+exec "$base/labwc/bin/labwc" -V -C "$base/labwc-config" \
+    -S "$base/tools/xp-standalone-start" >> "$state/compositor.log" 2>&1

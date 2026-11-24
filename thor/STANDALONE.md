@@ -2,6 +2,15 @@
 
 **Working on the real DRM seat as of 2026-11-23, using a separate 192-DPI prefix.**
 
+**Policy update, 2026-11-24:** the user authorized disabling the lower panel
+during XP testing. Both standalone variants now use `autoEnableOutputs=no` and
+`configure-win4wine-outputs.py` to enable the upper panel explicitly and keep
+DSI-1/touch off. External switching is guarded after a display-resource failure
+and unexpected reboot. A revised upper+DP policy is capped at 1080p for initial
+testing, but that two-output setup is not yet physically validated. The current
+active shell is XP at corrected 120 DPI; ReactOS's separate 192-DPI prefix remains.
+See [XP.md](XP.md) for authoritative current behavior and the recovery timeline.
+
 ## Current status
 
 - Native ARM64 patched labwc 0.8.3 / wlroots 0.18.2 / libsfdo 0.1.3 built in

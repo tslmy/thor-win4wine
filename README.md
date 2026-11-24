@@ -13,6 +13,8 @@ ReactOS media, SSH keys, or live Wine prefixes are committed here.
   shell, launch/exit instructions, compatibility layer, and validation.
 - [Standalone shell investigation](thor/STANDALONE.md): how to replace Plasma
   as the active desktop session without removing the recovery options.
+- [Windows XP variant](thor/XP.md): the second shell, switching, corrected DPI,
+  lower-panel policy, and the display-driver failure/recovery history.
 
 Device: AYN Thor Pro, Snapdragon 8 Gen 2, 12 GB RAM, running ArmadaOS.
 The initial installation and investigation were performed on 2026-11-23.

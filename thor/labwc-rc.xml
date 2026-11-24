@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <labwc_config>
-  <core><decoration>server</decoration><xwaylandPersistence>yes</xwaylandPersistence></core>
+  <core><decoration>server</decoration><xwaylandPersistence>yes</xwaylandPersistence><autoEnableOutputs>no</autoEnableOutputs></core>
   <theme>
     <font place="ActiveWindow"><size>9</size><weight>bold</weight></font>
     <font place="InactiveWindow"><size>9</size><weight>bold</weight></font>
@@ -17,4 +17,5 @@
   <mouse><default /></mouse>
   <touch deviceName="top_touchscreen" mapToOutput="DSI-2" mouseEmulation="yes" />
   <touch deviceName="bottom_touchscreen" mapToOutput="DSI-1" mouseEmulation="yes" />
+  <libinput><device category="bottom_touchscreen"><sendEventsMode>no</sendEventsMode></device></libinput>
 </labwc_config>

@@ -14,9 +14,7 @@ finish() {
 }
 trap finish EXIT
 # Set real panel transforms before starting Wine. Do not change Plasma's config.
-# KScreen Right (8) maps to Wayland's 270-degree transform, not 90.
-wlr-randr --output DSI-2 --mode 1080x1920@60Hz --transform 270 --scale 1.5 --pos 0,0 \
-    --output DSI-1 --mode 1080x1240 --transform 270 --scale 1.5 --pos 227,720 \
+python3 "$base/tools/configure-win4wine-outputs.py" \
     > "$state/outputs.log" 2>&1
 wlr-randr --json > "$state/outputs.json"
 dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE

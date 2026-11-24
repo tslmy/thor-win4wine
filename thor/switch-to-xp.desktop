@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Switch to Windows XP Shell
+Comment=Disconnect external display first; close the current desktop and switch to XP/Luna
+Exec=/var/home/armada/.local/bin/win4wine-switch xp
+Icon=preferences-desktop-theme
+Categories=System;
+Terminal=false

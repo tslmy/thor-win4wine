@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """One-session SDDM trial with an independent, timed rollback to Armada Desktop."""
+import argparse
 import fcntl
 import hashlib
 import json
@@ -47,7 +48,7 @@ def baseline_status(state):
     return {name: Path(name).exists() and hashlib.sha256(Path(name).read_bytes()).hexdigest() == digest
             for name, digest in state['baseline_sha256'].items()}
 
-def main(action):
+def main(action, session='armada-reactos.desktop'):
     if os.geteuid() != 0:
         raise SystemExit('Requires sudo; changes only its own temporary SDDM override.')
     RUNTIME.mkdir(mode=0o755, exist_ok=True)
@@ -56,17 +57,19 @@ def main(action):
         if action in ('begin', 'arm'):
             if OVERRIDE.exists() or OVERRIDE.is_symlink():
                 raise RuntimeError('A trial override already exists; inspect/finish that trial first.')
-            if not Path('/etc/win4wine/wayland-sessions/armada-reactos.desktop').is_file():
+            if session not in ('armada-reactos.desktop', 'armada-xp.desktop'):
+                raise RuntimeError('Only the registered ReactOS and XP sessions are supported.')
+            if not (Path('/etc/win4wine/wayland-sessions') / session).is_file():
                 raise RuntimeError('The standalone session is not registered.')
             timer = TIMER + '-' + str(time.time_ns())
-            state = {'phase': 'arming', 'started': time.time(), 'timer': timer,
+            state = {'phase': 'arming', 'started': time.time(), 'timer': timer, 'session': session,
                      'baseline_sha256': {str(p): hashlib.sha256(p.read_bytes()).hexdigest()
                                          for p in BASELINE if p.exists()}}
             save(state)
             call('systemd-run', '--unit=' + timer, '--on-active=8min',
                  '/usr/bin/python3', str(SELF), 'rollback')
             call('systemctl', 'is-active', '--quiet', timer + '.timer')
-            select('armada-reactos.desktop')
+            select(session)
             OVERRIDE.symlink_to(CONFIG)
             call('restorecon', '-F', str(OVERRIDE))
             state['phase'] = 'testing'
@@ -75,28 +78,44 @@ def main(action):
             if action == 'begin':
                 call('systemctl', 'restart', 'sddm.service')
         elif action == 'status':
+            if not STATE.exists():
+                print('No trial state in this boot.')
+                return
             state = json.loads(STATE.read_text())
             print(json.dumps(dict(state, baseline_unchanged=baseline_status(state)), indent=2))
         elif action == 'accept':
             state = json.loads(STATE.read_text())
-            if state['phase'] != 'testing' or CONFIG.read_text() != selection('armada-reactos.desktop'):
-                raise RuntimeError('The ReactOS trial is no longer active; cannot accept it.')
+            if state['phase'] != 'testing' or CONFIG.read_text() != selection(state.get('session', 'armada-reactos.desktop')):
+                raise RuntimeError('The shell trial is no longer active; cannot accept it.')
             state['phase'] = 'accepted'
             save(state)
             call('systemctl', 'stop', state.get('timer', TIMER) + '.timer')
             remove_override()
-            print('Current ReactOS session kept. Temporary override removed; boot defaults unchanged.')
+            print('Current shell session kept. Temporary override removed; boot defaults unchanged.')
             print(json.dumps(baseline_status(state), indent=2))
-        elif action == 'rollback':
-            state = json.loads(STATE.read_text())
-            if state['phase'] != 'testing':
+        elif action in ('rollback', 'rescue'):
+            if not STATE.exists() and action == 'rescue':
+                state = {'phase': 'recovery', 'started': time.time(),
+                         'baseline_sha256': {str(p): hashlib.sha256(p.read_bytes()).hexdigest()
+                                             for p in BASELINE if p.exists()}}
+                save(state)
+            elif not STATE.exists():
+                print('No active trial in this boot.')
+                return
+            else:
+                state = json.loads(STATE.read_text())
+            if action == 'rollback' and state['phase'] != 'testing':
                 print('No active trial; nothing to roll back.')
                 return
+            if action == 'rescue' and not OVERRIDE.exists() and not OVERRIDE.is_symlink():
+                select('armada-plasma.desktop')
+                OVERRIDE.symlink_to(CONFIG)
+                call('restorecon', '-F', str(OVERRIDE))
             if not OVERRIDE.is_symlink() or OVERRIDE.readlink() != CONFIG:
                 raise RuntimeError('Unexpected override; refusing to change it.')
             state['phase'] = 'rolling-back'
             save(state)
-            call('systemctl', 'stop', state.get('timer', TIMER) + '.timer')
+            subprocess.run(['systemctl', 'stop', state.get('timer', TIMER) + '.timer'], check=False)
             select('armada-plasma.desktop')
             call('systemctl', 'restart', 'sddm.service')
             for _ in range(120):
@@ -107,7 +126,7 @@ def main(action):
                     remove_override()
                     state['phase'] = 'rolled-back'
                     save(state)
-                    print('Armada Desktop restored; original boot defaults unchanged.')
+                    print('Armada Desktop fallback started; verify physical display visibility. Boot defaults unchanged.')
                     print(json.dumps(baseline_status(state), indent=2))
                     return
                 time.sleep(1)
@@ -116,4 +135,8 @@ def main(action):
             raise SystemExit('Usage: standalone-test-control.py arm|begin|status|accept|rollback')
 
 if __name__ == '__main__':
-    main(sys.argv[1] if len(sys.argv) == 2 else '')
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('action', choices=('arm', 'begin', 'status', 'accept', 'rollback', 'rescue'))
+    parser.add_argument('--session', choices=('armada-reactos.desktop', 'armada-xp.desktop'), default='armada-reactos.desktop')
+    args = parser.parse_args()
+    main(args.action, args.session)

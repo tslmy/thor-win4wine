@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=Windows XP Shell (Standalone)
+Comment=Experimental XP/Luna session; disconnect external DisplayPort before login
+Exec=/var/home/armada/.local/bin/xp-standalone-session
+Type=Application

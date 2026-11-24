@@ -2,6 +2,21 @@
 
 **For the user and Claude / the next agent. Updated 2026-11-23.**
 
+**Latest update, 2026-11-24:** a second standalone shell using the user's English
+XP Professional SP3 medium is installed and running on the upper panel. It uses
+Silver/Metallic Luna at **corrected 120 DPI**. The user explicitly authorized
+turning off the lower panel, including its labwc touch input. Both variants now
+initialize outputs disabled and enable the upper panel explicitly; external
+switching is gated pending conservative two-output validation. ReactOS's prefix
+and its 192-DPI setting remain separate and available.
+
+The initial XP three-output trial led to an unresolved external picture, timed
+rollback to Plasma, display-resource failures during recovery, and an unexpected
+device reboot confirmed by the user. Do not treat the earlier three-output
+success as proof of robustness. **Read `thor/XP.md` before further session/display
+changes**: it records the exact driver errors, reboot evidence, corrected theme
+metrics, screenshot findings, switching commands, and current safe limits.
+
 ## Short version
 
 ReactOS 0.4.16's i386 shell is installed and now running as the Thor's **sole

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Switch to ReactOS Shell
+Comment=Disconnect external display first; close the current desktop and switch to ReactOS
+Exec=/var/home/armada/.local/bin/win4wine-switch reactos
+Icon=preferences-desktop-theme
+Categories=System;
+Terminal=false
