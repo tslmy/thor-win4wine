@@ -57,8 +57,8 @@ def main(action, session='armada-reactos.desktop'):
         if action in ('begin', 'arm'):
             if OVERRIDE.exists() or OVERRIDE.is_symlink():
                 raise RuntimeError('A trial override already exists; inspect/finish that trial first.')
-            if session not in ('armada-reactos.desktop', 'armada-xp.desktop'):
-                raise RuntimeError('Only the registered ReactOS and XP sessions are supported.')
+            if session not in ('armada-reactos.desktop', 'armada-xp.desktop', 'armada-win7.desktop'):
+                raise RuntimeError('Only the registered ReactOS, XP and Win7 sessions are supported.')
             if not (Path('/etc/win4wine/wayland-sessions') / session).is_file():
                 raise RuntimeError('The standalone session is not registered.')
             timer = TIMER + '-' + str(time.time_ns())
@@ -137,6 +137,6 @@ def main(action, session='armada-reactos.desktop'):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=('arm', 'begin', 'status', 'accept', 'rollback', 'rescue'))
-    parser.add_argument('--session', choices=('armada-reactos.desktop', 'armada-xp.desktop'), default='armada-reactos.desktop')
+    parser.add_argument('--session', choices=('armada-reactos.desktop', 'armada-xp.desktop', 'armada-win7.desktop'), default='armada-reactos.desktop')
     args = parser.parse_args()
     main(args.action, args.session)

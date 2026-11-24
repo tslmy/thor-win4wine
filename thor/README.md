@@ -4,10 +4,12 @@ Installed on `armada@thor.local` on 2026-11-23, using the existing win4wine
 checkout, Claude's completed patched Wine 11.0 build, and the supplied
 `ReactOS-0.4.16-i386.zip`. The shell uses the classic ReactOS theme in English.
 
-**Current session:** standalone **Windows XP / Silver Luna**, at corrected
-**120 DPI**, on the upper panel only. ReactOS remains installed with its separate
-192-DPI prefix. The lower panel is disabled in both win4wine sessions; boot
-defaults still select Gaming Mode. See [XP.md](XP.md) for switching and safety limits.
+**Current session:** standalone **Windows 7 Basic**, at **120 DPI**, on the upper
+panel only. XP / Silver Luna (120 DPI) and ReactOS (192 DPI) remain separately
+installed and switchable. All three use software cursors; upper-output screenshots
+show visible pointers, but physical DP validation is pending. The lower panel
+is disabled; boot defaults still select Gaming Mode. See [WIN7.md](WIN7.md) for
+Win7 results and the unfinished Aero effects, and [XP.md](XP.md) for safety limits.
 
 ## Open and close
 

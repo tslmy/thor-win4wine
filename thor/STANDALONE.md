@@ -2,7 +2,13 @@
 
 **Working on the real DRM seat as of 2026-11-23, using a separate 192-DPI prefix.**
 
-**Policy update, 2026-11-24:** the user authorized disabling the lower panel
+**Overnight update, 2026-11-24:** a third standalone Win7 x64 shell is installed
+and was left running at 120 DPI, using Basic rather than full Aero. All three
+variants passed guarded upper-only switching and live Linux-window tests.
+Software cursors are enabled and visible in each variant's upper-output screenshot;
+external mouse visibility remains unverified. See [WIN7.md](WIN7.md).
+
+**Earlier policy update, 2026-11-24:** the user authorized disabling the lower panel
 during XP testing. Both standalone variants now use `autoEnableOutputs=no` and
 `configure-win4wine-outputs.py` to enable the upper panel explicitly and keep
 DSI-1/touch off. External switching is guarded after a display-resource failure

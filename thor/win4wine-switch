@@ -1,8 +1,8 @@
 #!/bin/bash
 # User-facing switch; the independent root service survives closing the desktop.
 set -euo pipefail
-[[ $# == 1 ]] || { echo 'Usage: win4wine-switch xp|reactos' >&2; exit 2; }
-case "${1:-}" in xp|reactos) variant=$1 ;; *) echo 'Usage: win4wine-switch xp|reactos' >&2; exit 2;; esac
+[[ $# == 1 ]] || { echo 'Usage: win4wine-switch xp|reactos|win7' >&2; exit 2; }
+case "${1:-}" in xp|reactos|win7) variant=$1 ;; *) echo 'Usage: win4wine-switch xp|reactos|win7' >&2; exit 2;; esac
 for status in /sys/class/drm/card*-DP-*/status; do
     [[ -r $status ]] || continue
     if [[ $(cat "$status") == connected ]]; then

@@ -11,11 +11,12 @@ if os.geteuid() != 0:
     raise SystemExit('Run through win4wine-switch (the worker must survive logout).')
 variant = sys.argv[1] if len(sys.argv) == 2 else ''
 choices = {
+    'win7': ('armada-win7.desktop', 'win7-standalone.json', 'win4wine-win7', 'win7-shell.json', 'Win7-Shell'),
     'xp': ('armada-xp.desktop', 'xp-standalone.json', 'win4wine-xp', 'xp-shell.json', 'XP-Shell'),
     'reactos': ('armada-reactos.desktop', 'reactos-standalone.json', 'win4wine-standalone', 'reactos-shell.json', 'ReactOS'),
 }
 if variant not in choices:
-    raise SystemExit('Usage: switch-win4wine-session.py xp|reactos')
+    raise SystemExit('Usage: switch-win4wine-session.py xp|reactos|win7')
 session, filename, state_dir, marker, identity = choices[variant]
 home = Path('/var/home/armada')
 config = json.loads((home / '.config/win4wine' / filename).read_text())

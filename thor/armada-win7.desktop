@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=Windows 7 Shell (Standalone)
+Comment=Experimental Win7 x64 shell on Wine/Box64 and native labwc
+Exec=/var/home/armada/.local/bin/win7-standalone-session
+Type=Application

@@ -2,7 +2,17 @@
 
 **For the user and Claude / the next agent. Updated 2026-11-23.**
 
-**Latest update, 2026-11-24:** a second standalone shell using the user's English
+**Latest overnight update, 2026-11-24:** Windows 7 SP1 x64 Professional is installed
+as a third independent standalone shell and was left running at 120 DPI on the
+upper panel. Headless shell/folder/logoff tests and live shell/folder/Linux-window
+checks passed. Protected Win7 → XP → ReactOS → Win7 switching passed. All three
+now force software cursors, with visible upper-panel cursor screenshots; physical
+external-cursor validation is still pending because DP was disconnected.
+**Full Aero effects are not implemented**: the actual Wine DWM blur/thumbnail APIs
+are stubs and the shell deliberately uses Basic. Read `thor/WIN7.md` for the
+measured results, source evidence and remaining work. Boot defaults are unchanged.
+
+**Previous update, 2026-11-24:** a second standalone shell using the user's English
 XP Professional SP3 medium is installed and running on the upper panel. It uses
 Silver/Metallic Luna at **corrected 120 DPI**. The user explicitly authorized
 turning off the lower panel, including its labwc touch input. Both variants now

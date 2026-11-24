@@ -3,6 +3,13 @@
 **Current result (2026-11-24): XP is running on the upper panel, at corrected
 120 DPI, with Silver/Metallic Luna. The lower panel is disabled.**
 
+**Overnight update:** Win7 is now the active shell; XP remains available at the
+same corrected DPI/style. Win7 → XP → ReactOS → Win7 switches passed after adding
+a bounded wait for outgoing session locks. All three force software cursors and
+their upper-output screenshots show visible pointers. DP was disconnected, so the
+external mouse issue is not yet physically validated. `win4wine-switch win7` and
+its application entry are installed. See [WIN7.md](WIN7.md) for the current result.
+
 ## Media and isolation
 
 The user supplied the mounted English XP Professional SP3 volume at

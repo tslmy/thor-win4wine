@@ -13,11 +13,11 @@ from Xlib import X, display, error, protocol
 home = Path.home()
 root = home / 'win4wine'
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--shell', choices=('reactos', 'xp'), default='reactos')
+parser.add_argument('--shell', choices=('reactos', 'xp', 'win7'), default='reactos')
 args = parser.parse_args()
 config = json.loads((home / f'.config/win4wine/{args.shell}-standalone.json').read_text())
-owner = 'xp-explorer.exe' if args.shell == 'xp' else 'ros-explorer.exe'
-label = 'Windows XP' if args.shell == 'xp' else 'ReactOS'
+owner = {'xp': 'xp-explorer.exe', 'reactos': 'ros-explorer.exe', 'win7': 'w7-explorer.exe'}[args.shell]
+label = {'xp': 'Windows XP', 'reactos': 'ReactOS', 'win7': 'Windows 7'}[args.shell]
 manager = dict(line.split('=', 1) for line in subprocess.check_output(
     ['systemctl', '--user', 'show-environment'], text=True).splitlines() if '=' in line)
 for name in ('DISPLAY', 'WAYLAND_DISPLAY', 'XAUTHORITY', 'XDG_CURRENT_DESKTOP'):
@@ -61,7 +61,7 @@ for kind in ('Progman', 'Shell_TrayWnd'):
     assert all(w.get_wm_class()[0] == owner for w in matches), kind
 print(f'PASS: {label} desktop/taskbar, no Plasma/KWin/Steam shell', flush=True)
 before = {w.id for w in windows('CabinetWClass')}
-command = r'C:\xp\xp-explorer.exe' if args.shell == 'xp' else 'explorer.exe'
+command = {'xp': r'C:\xp\xp-explorer.exe', 'win7': r'C:\w7\w7-explorer.exe', 'reactos': 'explorer.exe'}[args.shell]
 subprocess.Popen([config['wine'], command, 'C:\\'], env=env,
                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 opened = wait(lambda: [w for w in windows('CabinetWClass') if w.id not in before], f'{label} folder')

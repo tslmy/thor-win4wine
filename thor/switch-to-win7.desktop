@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Switch to Windows 7 Shell
+Comment=Disconnect external display first; close the current desktop and switch to Win7
+Exec=/var/home/armada/.local/bin/win4wine-switch win7
+Icon=preferences-desktop-theme
+Categories=System;
+Terminal=false
