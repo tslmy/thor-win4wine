@@ -9,9 +9,11 @@ Xwayland window over Plasma. It uses upstream win4wine's patched Wine 11.0,
 **private Box64**, and native Python for the supervisor/window manager.
 The taskbar, desktop, folder handoff, and logoff integration test passed.
 
-It is **not yet a standalone login session**. Plasma/KWin are still running.
-The next goal is a session whose only desktop shell is ReactOS; a compositor
-is still required underneath it. See `thor/STANDALONE.md` for the investigation.
+The active desktop is still the nested session over Plasma/KWin. A separate
+**ReactOS Shell (Standalone)** login session has now been built and registered,
+but has not been selected or tested on the real DRM seat. Native compositor
+window-integration and Adreno GLES2 smoke tests passed without logging out.
+See `thor/STANDALONE.md` for the implementation, pending hardware tests and fallback.
 
 ## Device and access
 
@@ -178,6 +180,49 @@ The running nested session was left open as the transient user unit
 `win4wine-reactos.service`. The application launcher normally starts the script
 directly, without that unit. To stop the test-launched instance:
 `systemctl --user stop win4wine-reactos`.
+
+## Standalone preparation completed after the initial handoff commit
+
+The user approved building/registering a standalone session without a desktop
+interruption or boot-default change. A native Fedora 44 ARM64 Docker build of
+the pinned patched labwc/wlroots/libsfdo sources succeeded. Artifacts are in
+`.build/labwc/` locally (ignored by Git) and `~/.local/share/win4wine/labwc/`
+on the Thor. No translated compositor or Wine rebuild was required.
+
+Build notes worth retaining:
+
+- wlroots 0.18's Meson `backends` option accepts DRM/libinput/X11, not `wayland`;
+  its Wayland backend is built implicitly. Similarly, `pixman` is not a renderer
+  option even though its software renderer is included. Keep upstream's `gles2`
+  renderer option; the isolated test can still request pixman at runtime.
+- Fedora's `hwdata-devel` and `xorg-x11-server-Xwayland-devel` provide required
+  pkg-config metadata; the runtime package names alone were insufficient.
+- Fedora libdisplay-info 0.3.0 built successfully with this pinned wlroots.
+- Debian Xvfb under FEX failed to write `/var/lib/xkb/server-41.xkm`; do not alter
+  system permissions to fix a test harness. A private native Fedora ARM64 Xvfb
+  was packaged instead, and the compositor test passed using it.
+- The GLES2 smoke test needs a 0700 IPC directory, as enforced by the patched
+  compositor. Its startup helper briefly stays alive to avoid a fast-exit/session
+  lifecycle race. Logged renderer: EGL Mesa, GL freedreno, **FD740**.
+- KScreen `Right` (8) maps to Wayland transform **270**, not 90. Both standalone
+  panel transforms are configured accordingly, but real touch/orientation is
+  still an acceptance test, not a verified result.
+- `TryExec` pointing into a 0700 user home can interfere with greeter discovery;
+  the session entry omits it. `DesktopNames` was rejected by this device's
+  desktop-file validator, so the launcher exports desktop identity itself.
+
+Registration created only `/etc/win4wine/wayland-sessions/armada-reactos.desktop`
+and `/etc/sddm.conf.d/50-win4wine-session-dirs.conf`. The SDDM directory list
+retains both stock directories. Registration manifest:
+`~/.local/share/win4wine/standalone-registration-20261123-221705.json`.
+Existing autologin and steamos-manager configuration are unchanged; SDDM was
+not restarted. The new directory setting becomes active when SDDM next restarts.
+
+The separate standalone config currently uses the same validated Wine prefix,
+separate logs, and disabled real power commands. A shared runtime lock prevents
+simultaneous nested/standalone use. Do not start it directly over SSH: it expects
+an SDDM seat/VT session. The startup script handles panel layout before Wine,
+native D-Bus activation and a polkit agent; a physical-session test is still needed.
 
 ## Guardrails for the next phase
 

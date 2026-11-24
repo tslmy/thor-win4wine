@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<labwc_config>
+  <core><decoration>server</decoration><xwaylandPersistence>yes</xwaylandPersistence></core>
+  <theme>
+    <font place="ActiveWindow"><size>9</size><weight>bold</weight></font>
+    <font place="InactiveWindow"><size>9</size><weight>bold</weight></font>
+  </theme>
+  <snapping><range>0</range><topMaximize>no</topMaximize></snapping>
+  <resistance><screenEdgeStrength>0</screenEdgeStrength><windowEdgeStrength>0</windowEdgeStrength></resistance>
+  <keyboard>
+    <keybind key="A-F4"><action name="Close" /></keybind>
+    <keybind key="C-A-BackSpace"><action name="Exit" /></keybind>
+    <keybind key="XF86_AudioLowerVolume"><action name="Execute" command="wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-" /></keybind>
+    <keybind key="XF86_AudioRaiseVolume"><action name="Execute" command="wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+" /></keybind>
+    <keybind key="XF86_AudioMute"><action name="Execute" command="wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle" /></keybind>
+  </keyboard>
+  <mouse><default /></mouse>
+  <touch deviceName="top_touchscreen" mapToOutput="DSI-2" mouseEmulation="yes" />
+  <touch deviceName="bottom_touchscreen" mapToOutput="DSI-1" mouseEmulation="yes" />
+</labwc_config>

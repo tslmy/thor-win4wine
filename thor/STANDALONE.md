@@ -1,6 +1,76 @@
 # Investigation: ReactOS as the sole desktop shell
 
-**Research only as of 2026-11-23. No standalone login session installed yet.**
+**Prepared and registered on 2026-11-23; real DRM login test still pending.**
+
+## Current status
+
+- Native ARM64 patched labwc 0.8.3 / wlroots 0.18.2 / libsfdo 0.1.3 built in
+  a Fedora 44 ARM64 Docker container and deployed in the Thor user's home.
+- Upstream compositor assertions passed on an isolated native Xvfb: desktop,
+  taskbar, stacking, proxy-frame pairing, geometry, maximization and shaped windows.
+- Native GLES2 startup passed nested on Plasma's Wayland display. Driver log:
+  EGL Mesa, GL freedreno, renderer **FD740** (Adreno 740).
+- SDDM entry **ReactOS Shell (Standalone)** registered in `/etc`, preserving
+  stock session directories. SDDM has not been restarted to activate that directory setting.
+- The current nested shell/Plasma session and all autologin/mode defaults are unchanged.
+- **Not yet verified:** standalone DRM startup, full ReactOS/Wine under native
+  labwc, actual panel/touch mapping, or absence of Plasma/Steam in the new session.
+
+### New files on the Thor
+
+- Native compositor and private test Xvfb: `~/.local/share/win4wine/labwc/bin/`
+- Launcher: `~/.local/bin/reactos-standalone-session`
+- Startup adapter: `~/.local/share/win4wine/tools/reactos-standalone-start`
+- Config: `~/.config/win4wine/reactos-standalone.json`
+- labwc config: `~/.local/share/win4wine/labwc-config/`
+- Logs: `~/.local/state/win4wine-standalone/`
+- Session entry: `/etc/win4wine/wayland-sessions/armada-reactos.desktop`
+- Session-directory override: `/etc/sddm.conf.d/50-win4wine-session-dirs.conf`
+- Registration manifest: `~/.local/share/win4wine/standalone-registration-20261123-221705.json`
+
+The override adds only a session directory, **not an autologin selection**.
+The registration tool refuses existing different content and records created
+file hashes. No `/usr` overlay, system package installation, or display-manager
+replacement was needed.
+
+### Prepared behavior and escape routes
+
+The standalone launcher requires an SDDM seat/VT environment, uses logind for
+DRM access, and refuses simultaneous use of the nested shell's Wine prefix.
+It stops lingering graphical-session units only when launched in that seat.
+labwc is the only compositor in this session; no Plasma/Steam shell is started.
+
+The startup adapter requests both panels at 60 Hz, Wayland transform 270
+(equivalent to KScreen Right), scale 1.5, upper panel primary and lower panel
+centered beneath it. Touch devices are mapped by name to their own outputs
+with mouse emulation. These are prepared settings, not yet hardware-validated.
+
+- ReactOS Log Off should end labwc and return control to SDDM.
+- Ctrl+Alt+Backspace is a compositor-level emergency exit.
+- Real shutdown/reboot remain disabled until separately approved/tested.
+- The lower panel is a second desktop output, **not yet an on-screen keyboard**.
+- SSH remains the recovery channel; do not rely solely on GUI recovery.
+
+For a failing test session, the existing Armada helper
+`sudo -n /usr/libexec/armada/session-control switch-desktop` selects the stock
+Armada desktop and restarts/switches SDDM. This is disruptive and is a recovery
+action, not something to run during preparation. Any temporary autologin/test
+override must first be removed/restored if one is introduced during the test.
+
+### Rebuilding and repeating safe tests
+
+On the Mac, run `bash thor/build-labwc-arm64.sh`. It creates or resumes the
+`thor-labwc-build` container; generated sources and artifacts live in ignored
+`.build/labwc/`. Pinned source archives and patch digests accompany the runtime.
+
+On the Thor, `PYTHONPATH=$HOME/.local/share/win4wine/python python3
+~/.local/share/win4wine/tools/test-native-labwc.py` runs the isolated compositor
+assertions. `python3 ~/.local/share/win4wine/tools/test-labwc-gles2.py` runs the
+brief nested GLES2 smoke test while an existing Wayland desktop is available.
+
+The next step requires the user's approval to close the current desktop and
+perform a controlled SDDM/DRM test with rollback ready. Making this the boot
+default remains a separate, later decision.
 
 ## What “sole shell” means here
 
@@ -40,8 +110,9 @@ should not be necessary just to add the compositor.
 - Display manager: **SDDM**, with a Wayland greeter/session wrapper.
 - Existing session entries: Armada Desktop, Armada Plasma Mobile, Steam Big
   Picture, and upstream Plasma entries. No X11 sessions were registered.
-- `Xorg`, `labwc`, and `weston` were not found on PATH. **Cage** and **Gamescope**
-  are already installed. Xwayland is present and works.
+- Before preparation, `Xorg`, `labwc`, and `weston` were not found on PATH.
+  **Cage** and **Gamescope** were already installed. Xwayland works; native
+  labwc is now deployed privately rather than added to the system PATH.
 - `/usr/local` is a directory in the immutable filesystem, not a writable
   `/var/usrlocal` symlink. Do not assume generic Fedora bootc `/usr/local` recipes apply.
 - SDDM supports **comma-separated SessionDir lists** (confirmed with

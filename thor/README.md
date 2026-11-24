@@ -78,3 +78,13 @@ starts do not use that transient unit.
 
 Set `WIN4WINE_OUTPUT=DSI-1` when launching to use the lower display instead.
 The launcher prevents two concurrent nested sessions.
+
+## Standalone session (prepared, not switched to yet)
+
+**ReactOS Shell (Standalone)** is registered separately with SDDM and uses
+native patched labwc instead of Plasma/KWin. Native compositor tests and the
+Adreno GLES2 smoke test passed, but the actual DRM login and panel/touch tests
+are pending. Boot defaults are unchanged, and SDDM has not been restarted.
+
+See [STANDALONE.md](STANDALONE.md) before selecting/testing it. Do not run its
+launcher directly over SSH or while the nested shell is using the same prefix.

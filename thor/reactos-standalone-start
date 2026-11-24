@@ -1,0 +1,29 @@
+#!/bin/bash
+# Called inside native labwc, after its Wayland and Xwayland displays exist.
+set -euo pipefail
+base=$HOME/.local/share/win4wine
+config=${WIN4WINE_STANDALONE_CONFIG:?Missing standalone configuration}
+state=$HOME/.local/state/win4wine-standalone
+finish() {
+    result=$?
+    [[ -z ${agent_pid:-} ]] || kill "$agent_pid" 2>/dev/null || true
+    # End the compositor on both logoff and startup failure, including fast exits.
+    if [[ -n ${LABWC_PID:-} ]]; then
+        kill -TERM "$LABWC_PID" 2>/dev/null || true
+    fi
+}
+trap finish EXIT
+# Set real panel transforms before starting Wine. Do not change Plasma's config.
+# KScreen Right (8) maps to Wayland's 270-degree transform, not 90.
+wlr-randr --output DSI-2 --mode 1080x1920@60Hz --transform 270 --scale 1.5 --pos 0,0 \
+    --output DSI-1 --mode 1080x1240 --transform 270 --scale 1.5 --pos 227,720 \
+    > "$state/outputs.log" 2>&1
+wlr-randr --json > "$state/outputs.json"
+dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE
+agent=/usr/libexec/kf6/polkit-kde-authentication-agent-1
+if [[ -x $agent ]]; then
+    "$agent" > "$state/polkit.log" 2>&1 &
+    agent_pid=$!
+fi
+python3 "$HOME/win4wine/session/supervisor.py" --config "$config" \
+    >> "$state/supervisor-output.txt" 2>&1

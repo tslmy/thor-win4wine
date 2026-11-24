@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=ReactOS Shell (Standalone)
+Comment=ReactOS desktop on native labwc and Wine/Box64, without Plasma
+Exec=/var/home/armada/.local/bin/reactos-standalone-session
+Type=Application

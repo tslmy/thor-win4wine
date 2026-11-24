@@ -1,0 +1,39 @@
+#!/bin/bash
+# SDDM entry point: native labwc is the only compositor; no Plasma shell.
+set -euo pipefail
+base=$HOME/.local/share/win4wine
+state=$HOME/.local/state/win4wine-standalone
+config=${XDG_CONFIG_HOME:-$HOME/.config}/win4wine/reactos-standalone.json
+[[ -x $base/labwc/bin/labwc && -f $config ]] || { echo 'Standalone runtime/config is missing.' >&2; exit 1; }
+: "${XDG_RUNTIME_DIR:?A logind/SDDM user session is required}"
+[[ -n ${XDG_SEAT:-} && -n ${XDG_VTNR:-} ]] || {
+    echo 'Launch this from an SDDM seat session, not directly over SSH.' >&2
+    exit 1
+}
+mkdir -p "$state"
+exec 8>"$XDG_RUNTIME_DIR/win4wine-window.lock"
+flock -n 8 || { echo 'Close the nested ReactOS session before starting the standalone session.' >&2; exit 1; }
+exec 9>"$XDG_RUNTIME_DIR/win4wine-standalone.lock"
+flock -n 9 || { echo 'A standalone session is already running.' >&2; exit 1; }
+# A new display session must not reuse stale Plasma sockets or toolkit overrides.
+unset DISPLAY WAYLAND_DISPLAY XAUTHORITY SESSION_MANAGER
+unset QT_IM_MODULE GTK_IM_MODULE QT_QPA_PLATFORMTHEME PLASMA_INTEGRATION_USE_PORTAL
+unset WIN4WINE_DISPLAY WIN4WINE_GEOMETRY WIN4WINE_OUTPUT
+export XDG_CURRENT_DESKTOP=ReactOS XDG_SESSION_DESKTOP=reactos XDG_SESSION_TYPE=wayland
+export PYTHONPATH="$base/python${PYTHONPATH:+:$PYTHONPATH}"
+export FEX_ROOTFS="$base/rootfs"
+export LD_LIBRARY_PATH="$base/labwc/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:$base/rootfs/usr/bin"
+export LIBSEAT_BACKEND=logind
+export WLR_BACKENDS=drm,libinput
+# Only after SDDM has started this seat session: remove lingering desktop units.
+systemctl --user stop graphical-session.target || true
+export WIN4WINE_IPC
+WIN4WINE_IPC=$(mktemp -d "$XDG_RUNTIME_DIR/win4wine-standalone-XXXXXX")
+export WIN4WINE_STANDALONE_CONFIG=$config
+# SDDM must track the compositor itself, not a shell waiting on an orphanable child.
+exec "$base/labwc/bin/labwc" \
+    -V \
+    -C "$base/labwc-config" \
+    -S "$base/tools/reactos-standalone-start" \
+    >> "$state/compositor.log" 2>&1
