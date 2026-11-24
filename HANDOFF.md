@@ -1,5 +1,14 @@
 # Handoff: win4wine on the AYN Thor
 
+**Reproduction/publication update:** the root `justfile` and
+`docs/REPRODUCING.md` now provide the clone-to-install workflow, including private
+Wine/rootfs/bridge builds, native builds, media extraction, per-account deployment,
+headless tests, registration and explicit guarded switching. The native source
+build/synthetic-output smoke test, ReactOS extraction and PE-helper cross-build
+were exercised. Full fresh-device deployment remains unverified: the device was
+unreachable over SSH during packaging. Historical notes below are not installer
+defaults. Public history is redacted/anonymized; old commit IDs may not resolve.
+
 **For the user and Claude / the next agent. Updated 2026-11-23.**
 
 **Latest overnight update, 2026-11-24:** Windows 7 SP1 x64 Professional is installed

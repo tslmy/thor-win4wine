@@ -1,0 +1,9 @@
+# Only build recipes enter a Docker build context. Media/build outputs stay out.
+*
+!containers/
+!containers/wine.Dockerfile
+!containers/native.Dockerfile
+!containers/build-wine.sh
+!containers/smoke-native.sh
+!containers/test.Dockerfile
+!containers/test-runtime.sh

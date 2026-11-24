@@ -11,3 +11,20 @@ __pycache__/
 *.tar.*
 *.zip
 /.build/
+
+# Local connection settings, secrets, user media and captures are never source.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_ed25519*
+id_rsa*
+*.iso
+*.wim
+*.vhd*
+*.qcow2
+*.png
+*.jpg
+*.jpeg
+*.bmp

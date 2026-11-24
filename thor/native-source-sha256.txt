@@ -1,0 +1,3 @@
+c06f1bb898db89f2060f1409ffa3cffc2827d1d72abeada78656823f31f236ab  labwc.tar.gz
+f66a3bf7983faadae36ecf1fae659afc883fa2fc0c1c7d913e5aa090aef274d3  wlroots.tar.gz
+7591287ffa6341162e5a27974b2ceb3930b0c25f61bb290ba760cdb7dab4a894  libsfdo.tar.gz

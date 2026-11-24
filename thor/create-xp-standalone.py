@@ -19,6 +19,9 @@ state = home / '.local/state/win4wine-xp'
 state.mkdir(parents=True, exist_ok=True)
 if prefix.exists():
     raise SystemExit(f'Refusing to overwrite existing XP prefix: {prefix}')
+config = home / '.config/win4wine/xp-standalone.json'
+if config.exists():
+    raise SystemExit(f'Refusing existing XP configuration: {config}')
 if not (assets / 'manifest.json').is_file():
     raise SystemExit('Extract the user-provided XP media first.')
 for helper in ('theme-settings.exe', 'menu-settings.exe', 'xptray.exe', 'startmenu.exe',
@@ -70,16 +73,16 @@ with (state / 'installation.log').open('w') as log:
             subprocess.run([str(server), '-k'], env=env, stdout=output, stderr=subprocess.STDOUT, timeout=30)
             subprocess.run([str(server), '-w'], env=env, stdout=output, stderr=subprocess.STDOUT, timeout=30)
             setup(str(wine), str(root / '.local/bridge/theme-settings.exe'), 'msstyles',
-                  r'C:\windows\Resources\Themes\Luna\luna.msstyles', 'NormalColor', 'NormalSize')
+                  r'C:\windows\Resources\Themes\Luna\luna.msstyles', 'Metallic', 'NormalSize')
             setup(str(wine), 'reg', 'add', r'HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer',
                   '/v', 'NoLowDiskSpaceChecks', '/t', 'REG_DWORD', '/d', '1', '/f')
-        config = home / '.config/win4wine/xp-standalone.json'
+        config.parent.mkdir(parents=True, exist_ok=True)
         if config.exists():
             raise RuntimeError(f'Refusing existing XP configuration: {config}')
         config.write_text(json.dumps({
             'shell': 'xp', 'wine': str(wine), 'prefix': str(prefix), 'state': str(state),
             'locale': 'en_US.UTF-8', 'linux_font': 'Tahoma', 'linux_menu': True,
-            'welcome_screen': False, 'cursor_theme': None, 'shutdown_command': None,
+            'welcome_screen': False, 'cursor_theme': 'win4wine-xp', 'shutdown_command': None,
             'reboot_command': None, 'readiness_timeout': 90, 'primary': 'DSI-2',
         }, indent=2) + '\n')
         print(f'XP/Luna prefix and configuration ready: {prefix}', flush=True)

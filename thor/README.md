@@ -1,5 +1,10 @@
 # win4wine on the AYN Thor
 
+**New installation? Start with [the clone-to-install guide](../docs/REPRODUCING.md)
+and the root `justfile`.** The paths and commands below describe the historical
+development device. The new installer discovers your actual user/home/UID and
+never requires the original developer's machine, Docker volume or credentials.
+
 Installed on `armada@thor.local` on 2026-11-23, using the existing win4wine
 checkout, Claude's completed patched Wine 11.0 build, and the supplied
 `ReactOS-0.4.16-i386.zip`. The shell uses the classic ReactOS theme in English.

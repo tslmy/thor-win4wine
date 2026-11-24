@@ -1,0 +1,18 @@
+{
+  "win4wine": {
+    "url": "https://github.com/mikuta0407/win4wine",
+    "commit": "45d728622554289e36cd8dfe52e24f0faf8f9316"
+  },
+  "box64": {
+    "url": "https://pi-apps-coders.github.io/box64-debs/debian/box64-generic-arm_0.4.5+20261117T153228.27c8275-1_arm64.deb",
+    "sha256": "5d7a3ee8a17b28cb3192465c054544faaafa7d894a4fa92ef6d9a50a58d7edd9"
+  },
+  "win4wine_archive_sha256": "8cdf0520ec72e554aeba7c816c3125f54b1ac1b0d55ceb290aba76c75d61eaff",
+  "wine_commit": "db11d0fe6a169c457e23d007e20404643d067aa8",
+  "wine_source_sha256": "18aaee150ad540885b9706ae73ccf6febca904049de2792199a9dc18a2772e6a",
+  "wine_patches_sha256": "2880f9ac8bc8a3976da2e5d6997be941038f0608fc35415dabe85570750bccc9",
+  "images": {
+    "wine": "debian:trixie",
+    "native": "fedora:44"
+  }
+}
