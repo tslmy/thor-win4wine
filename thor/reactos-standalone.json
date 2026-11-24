@@ -1,7 +1,7 @@
 {
   "shell": "reactos",
   "wine": "/var/home/armada/.local/share/win4wine/box64-wine/bin/wine",
-  "prefix": "/var/home/armada/win4wine/.local/prefix-reactos-box64",
+  "prefix": "/var/home/armada/win4wine/.local/prefix-reactos-standalone",
   "state": "/var/home/armada/.local/state/win4wine-standalone",
   "locale": "en_US.UTF-8",
   "linux_font": "Tahoma",

@@ -4,16 +4,16 @@
 
 ## Short version
 
-ReactOS 0.4.16's i386 shell is installed and works on the Thor in a fullscreen
-Xwayland window over Plasma. It uses upstream win4wine's patched Wine 11.0,
-**private Box64**, and native Python for the supervisor/window manager.
-The taskbar, desktop, folder handoff, and logoff integration test passed.
+ReactOS 0.4.16's i386 shell is installed and now running as the Thor's **sole
+desktop shell**, without Plasma/KWin or Steam, on native patched labwc/DRM.
+It uses upstream win4wine's patched Wine 11.0, **private Box64**, native Python,
+and a separate **192-DPI** standalone Wine prefix. The original nested setup
+remains available in Armada Desktop with its unchanged 96-DPI prefix.
 
-The active desktop is still the nested session over Plasma/KWin. A separate
-**ReactOS Shell (Standalone)** login session has now been built and registered,
-but has not been selected or tested on the real DRM seat. Native compositor
-window-integration and Adreno GLES2 smoke tests passed without logging out.
-See `thor/STANDALONE.md` for the implementation, pending hardware tests and fallback.
+Live standalone tests passed for desktop/taskbar ownership, folder handoff and
+native Linux terminal integration. The user confirmed touch and an external
+DisplayPort test window at 4K/60. Boot defaults were deliberately not changed.
+See `thor/STANDALONE.md` for current behavior, remaining tests and recovery details.
 
 ## Device and access
 
@@ -176,7 +176,7 @@ Validation completed on the device:
 - `desktop-file-validate` and launcher `bash -n` passed.
 - Final screenshot: `~/.local/state/win4wine/reactos-shell.png`, 1280x720.
 
-The running nested session was left open as the transient user unit
+At the end of the initial installation, the running nested session was left open as the transient user unit
 `win4wine-reactos.service`. The application launcher normally starts the script
 directly, without that unit. To stop the test-launched instance:
 `systemctl --user stop win4wine-reactos`.
@@ -223,6 +223,49 @@ separate logs, and disabled real power commands. A shared runtime lock prevents
 simultaneous nested/standalone use. Do not start it directly over SSH: it expects
 an SDDM seat/VT session. The startup script handles panel layout before Wine,
 native D-Bus activation and a polkit agent; a physical-session test is still needed.
+
+**That paragraph describes the preparation checkpoint. It is superseded by the
+live trial below: the current standalone config uses a separate 192-DPI prefix.**
+
+## Live standalone trial: successful, with caveats
+
+The user authorized the controlled logout and then chose to keep ReactOS running.
+An eight-minute independent root rollback timer was armed before switching SDDM;
+accepted trials canceled their timer and removed the temporary override. Three
+original boot/mode config files were hash-checked unchanged. The trial override
+was an `/etc` symlink to a `/run` file, so it does not persist a selection across reboot.
+
+The live test found and fixed two startup issues: the lower panel's exact mode is
+59.999 Hz (select by dimensions rather than a rounded 60-Hz string), and the
+launcher must exec labwc so SDDM tracks the compositor directly rather than an
+orphanable child. The primary startup script now exits the compositor on both
+logoff and failure. See the standalone document for the complete diagnostic history.
+
+Current verified state:
+
+- Native DRM/logind seat with Adreno FD740, both internal panels enabled/rotated.
+- ReactOS owns the desktop/taskbar; no Plasma/KWin/Steam shell processes.
+- Folder requests go to ReactOS Explorer; a native Konsole window integrates.
+- User confirmed touch and clarified the lower panel is on but has black background.
+- User confirmed the corrected blue DP-1 probe on Dell U2720Q at 3840x2160/~60 Hz.
+- Dedicated prefix `~/win4wine/.local/prefix-reactos-standalone/` at **192 DPI**;
+  original `prefix-reactos-box64` still **96 DPI**. Win32 probes confirmed the DPI,
+  22-pixel Tahoma fonts and 50-pixel taskbar. Classic icons remain 32x32.
+- SDDM and steamos-manager original boot defaults still select Gaming Mode.
+  This changes the current desktop session, not the permanent boot default.
+
+DisplayPort briefly disconnected and USB/PHY resume warnings were observed, but
+no USB driver reset, kernel change or firmware update was attempted. A first
+probe-window test was invalid because Linux-window cascading moved it back to
+the handheld; the corrected synthetic-Wine probe preserved its verified external
+coordinates and was visually confirmed. Do not misdiagnose a black extended
+workspace as a missing external output: ReactOS wallpaper/taskbar are primary-only.
+
+Remaining checks: ordinary standalone Log Off round trip, audio playback,
+controller/button handling, suspend/resume stability, polkit prompts and desktop
+portals. The polkit log shows a portal activation failure; native terminal use
+works but full Flatpak/portal integration is not yet established. A boot-default
+change requires a separate user request.
 
 ## Guardrails for the next phase
 

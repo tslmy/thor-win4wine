@@ -1,6 +1,6 @@
 # Investigation: ReactOS as the sole desktop shell
 
-**Prepared and registered on 2026-11-23; real DRM login test still pending.**
+**Working on the real DRM seat as of 2026-11-23, using a separate 192-DPI prefix.**
 
 ## Current status
 
@@ -10,11 +10,21 @@
   taskbar, stacking, proxy-frame pairing, geometry, maximization and shaped windows.
 - Native GLES2 startup passed nested on Plasma's Wayland display. Driver log:
   EGL Mesa, GL freedreno, renderer **FD740** (Adreno 740).
-- SDDM entry **ReactOS Shell (Standalone)** registered in `/etc`, preserving
-  stock session directories. SDDM has not been restarted to activate that directory setting.
-- The current nested shell/Plasma session and all autologin/mode defaults are unchanged.
-- **Not yet verified:** standalone DRM startup, full ReactOS/Wine under native
-  labwc, actual panel/touch mapping, or absence of Plasma/Steam in the new session.
+- SDDM entry **ReactOS Shell (Standalone)** is registered and has been selected
+  on the real DRM/logind seat. Both handheld panels are enabled and rotated correctly.
+- Live assertions passed for ReactOS desktop/taskbar ownership, folders opening
+  in ReactOS Explorer, and a native Linux terminal appearing in shell integration.
+- No `plasmashell`, `kwin_wayland`, or Steam shell was running during those checks.
+- The user confirmed touch works and clarified that the lower display is on;
+  its background is black, not a failed panel.
+- The user confirmed an explicitly positioned test window is visible on the
+  Dell U2720Q via **DP-1 at 3840x2160 / approximately 60 Hz**.
+- Standalone Wine is at **192 DPI**, verified through Win32 APIs, not just the
+  registry. The original nested Wine prefix remains at 96 DPI.
+- Original SDDM autologin and steamos-manager boot defaults are unchanged.
+  Trial overrides were removed and rollback timers canceled after acceptance.
+- Still to test/harden: audio playback and controller shortcuts, suspend/resume,
+  actual polkit prompts, desktop portals, and an ordinary shell Log Off round trip.
 
 ### New files on the Thor
 
@@ -22,11 +32,13 @@
 - Launcher: `~/.local/bin/reactos-standalone-session`
 - Startup adapter: `~/.local/share/win4wine/tools/reactos-standalone-start`
 - Config: `~/.config/win4wine/reactos-standalone.json`
+- Dedicated Wine prefix: `~/win4wine/.local/prefix-reactos-standalone/` (192 DPI)
 - labwc config: `~/.local/share/win4wine/labwc-config/`
 - Logs: `~/.local/state/win4wine-standalone/`
 - Session entry: `/etc/win4wine/wayland-sessions/armada-reactos.desktop`
 - Session-directory override: `/etc/sddm.conf.d/50-win4wine-session-dirs.conf`
 - Registration manifest: `~/.local/share/win4wine/standalone-registration-20261123-221705.json`
+- Safe trial controller: `/etc/win4wine/standalone-test-control.py`
 
 The override adds only a session directory, **not an autologin selection**.
 The registration tool refuses existing different content and records created
@@ -36,19 +48,23 @@ replacement was needed.
 ### Prepared behavior and escape routes
 
 The standalone launcher requires an SDDM seat/VT environment, uses logind for
-DRM access, and refuses simultaneous use of the nested shell's Wine prefix.
+DRM access, and allows only one nested/standalone shell session at a time.
 It stops lingering graphical-session units only when launched in that seat.
 labwc is the only compositor in this session; no Plasma/Steam shell is started.
 
-The startup adapter requests both panels at 60 Hz, Wayland transform 270
+The startup adapter requests the upper panel at 60 Hz and uses the lower panel's
+sole 1080x1240 mode (actually 59.999 Hz), with Wayland transform 270
 (equivalent to KScreen Right), scale 1.5, upper panel primary and lower panel
 centered beneath it. Touch devices are mapped by name to their own outputs
-with mouse emulation. These are prepared settings, not yet hardware-validated.
+with mouse emulation. Real DRM startup and user touch feedback validated this setup.
 
-- ReactOS Log Off should end labwc and return control to SDDM.
+- ReactOS Log Off ends the supervisor and should end labwc, returning control to
+  SDDM. The destination afterwards is controlled by SDDM; boot defaults still select Game Mode.
 - Ctrl+Alt+Backspace is a compositor-level emergency exit.
 - Real shutdown/reboot remain disabled until separately approved/tested.
 - The lower panel is a second desktop output, **not yet an on-screen keyboard**.
+- ReactOS's wallpaper/taskbar are primary-only. Secondary and external outputs
+  can therefore look black until a window is moved onto them; black is not "no signal".
 - SSH remains the recovery channel; do not rely solely on GUI recovery.
 
 For a failing test session, the existing Armada helper
@@ -68,9 +84,71 @@ On the Thor, `PYTHONPATH=$HOME/.local/share/win4wine/python python3
 assertions. `python3 ~/.local/share/win4wine/tools/test-labwc-gles2.py` runs the
 brief nested GLES2 smoke test while an existing Wayland desktop is available.
 
-The next step requires the user's approval to close the current desktop and
-perform a controlled SDDM/DRM test with rollback ready. Making this the boot
-default remains a separate, later decision.
+To recreate the dedicated prefix, first close all Wine programs in the original
+source prefix, then run `python3 ~/.local/share/win4wine/tools/create-standalone-prefix.py`.
+It defaults to 192 DPI, refuses to overwrite an existing destination, and uses
+Btrfs reflinks when available. DPI lives in the prefix registry, not a JSON `dpi` field.
+
+Making ReactOS the boot/default managed desktop remains a separate decision.
+
+## What the live trial uncovered
+
+### SDDM/compositor lifecycle
+
+The lower mode is 59.999 Hz, so exact `1080x1240@60Hz` selection was rejected.
+Use `--mode 1080x1240` for this single-mode panel. The first failure also exposed
+a lifecycle issue: SDDM was tracking a shell waiting on labwc; the compositor
+could survive the helper and keep the session lock. The launcher now **execs
+labwc directly**, and the primary startup script terminates its own `LABWC_PID`
+on exit, including startup failures. The orphaned test compositor was terminated
+by its specific PID; no broad user-process kill was used.
+
+### Safe trial and unchanged defaults
+
+`standalone-test-control.py arm|begin` creates a temporary autologin selection
+via `/etc/sddm.conf.d/zzzz-win4wine-live-test.conf`, a symlink to a file in `/run`.
+Thus its target disappears on reboot instead of making a failed trial persistent.
+It arms an independent root systemd rollback timer for eight minutes before
+switching/stopping SDDM. `arm` prepares protection without restarting the display
+manager, useful while adjusting a stopped Wine prefix; `begin` also restarts SDDM.
+
+`accept` cancels that trial's timer, removes only its expected symlink/config,
+and leaves the current ReactOS session running. SHA-256 comparisons confirmed
+`armada.conf`, `zz-holo-autologin.conf`, and steamos-manager `state.toml` were unchanged.
+The automatic rollback branch was armed but did not need to run during the
+successful trial; do not claim a full recovery-path test has been performed.
+
+### DPI: measure the APIs, not only a perceived change
+
+The user found 96 DPI too small and did not perceive a sufficient change at
+144 DPI. We cloned the idle, validated prefix with Btrfs reflinks, keeping the
+original at 96 DPI, and raised the standalone copy to 192 DPI. Upstream probes
+confirmed system DPI 192, Tahoma menu/caption fonts at 22 pixels, a 50-pixel
+taskbar and an 87x40 Start button. At 144 DPI these were 17-pixel fonts and a
+40-pixel taskbar. **Classic shell icons remain 32x32** by the upstream XP-style
+policy, so DPI is not an across-the-board image enlargement.
+
+### DisplayPort: connected state is not sufficient visual validation
+
+DP-1 did hotplug and modeset at 4K/60. Disconnect/reconnect attempts also logged
+USB/PHY resume warnings (including a resume timeout); no kernel, firmware, or
+USB binding was changed to address those warnings. Subsequent reconnect worked.
+
+The initial diagnostic window was cascaded back to the handheld by Linux-window
+placement, invalidating that visual test. The corrected probe uses synthetic
+Wine window identity like upstream's compositor tests, so its requested X11
+position is preserved. Global coordinates 3210,50 were verified on DP-1, and
+the user then confirmed the blue window was visible. Probe windows/services
+were stopped after testing. Do not describe the earlier blank external workspace
+as proof that DisplayPort is unsupported.
+
+### Remaining integration caveat
+
+PipeWire, PipeWire PulseAudio and WirePlumber were running, but playback was not
+audibly tested. A polkit agent starts, yet its log includes a desktop-portal
+activation failure. Investigate proper graphical-session target/portal integration
+before claiming complete desktop-service or Flatpak support. None of that requires
+putting Plasma's desktop shell back underneath ReactOS.
 
 ## What “sole shell” means here
 
