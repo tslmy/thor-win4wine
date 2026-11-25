@@ -75,9 +75,12 @@ class ReproductionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp)
             (path / '.thor-source.json').write_text(json.dumps(cli.SOURCES['win4wine']))
-            with patch.object(cli, 'SOURCE', path), patch.object(cli, 'download') as download:
+            # An existing source is not fetched again, but still gets Thor's patches.
+            with patch.object(cli, 'SOURCE', path), patch.object(cli, 'download') as download, \
+                    patch.object(cli, 'patch_source') as apply_patches:
                 cli.source()
                 download.assert_not_called()
+                apply_patches.assert_called_once_with()
 
     def test_media_must_be_user_supplied(self):
         with patch.object(cli, 'source'), patch.object(cli, 'docker_image') as docker:
