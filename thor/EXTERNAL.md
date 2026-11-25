@@ -109,6 +109,19 @@ is unknown, so a userspace trigger is not ruled out, and the new restriction
 cannot prevent a crash that happens at plug time. **Do not plug the glasses in
 with unsaved work.** Logs: `~/.local/state/win4wine-xp/xreal-crash-20261124/`.
 
+**The glasses also fail in stock Plasma**, with no win4wine session, compositor or
+watcher running (same day, Armada 20261109.dfed5d6, kernel 7.2.6). Both plug-ins
+gave "no signal" and froze touch until after unplugging, when the queued touches
+arrived together. No reboot. While plugged in the kernel logged, about 29 times a
+second, `[dpu error]unable to find appropriate mixers`, `failed to reserve hw
+resources: -119` and `LM_4/LM_5, invalid DSPP_-1`, plus one DP `aux read failed
+rlen=-110`; KWin reported `Modeset failed`. Bursts: 22:29:04-22:29:51 and
+22:30:54-22:33:04. These match the first three-output failure in [XP.md](XP.md).
+So the glasses problem is in Armada or its kernel display driver. Whether it is
+what reset the Thor in XP is not established. KWin identifies the glasses as
+`MRG`; the mode it attempted was not recorded. Not reported upstream.
+Logs: `~/.local/state/win4wine-xp/xreal-plasma-2233/`.
+
 The
 supervisor patch also writes why it restarts the shell to
 `supervisor-output.txt` (`restarting the shell: ready=… taskbar=… shell exit=…
