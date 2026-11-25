@@ -99,7 +99,9 @@ the menu appeared before and not after. A running session picks the file up on
 - **XP shell restarted on an unplug, once.** The desktop was already on the
   handheld and no windows were open, so the watcher did nothing; `xp-shell.log`
   shows `X Error: BadWindow (X_UnmapWindow)` and the supervisor restarted the
-  shell. Cause unknown, not reproduced on purpose. Open windows would have been
+  shell. Cause unknown, not reproduced on purpose. The user had been experimenting
+  with the shell at the time and may have triggered it; revisit if it recurs in
+  ordinary use. Open windows would have been
   lost. An earlier XP unplug with the desktop on the monitor did not do this.
   The supervisor falls back after three shell exits in two minutes, and the
   watcher's restart spacing counts only its own restarts.
