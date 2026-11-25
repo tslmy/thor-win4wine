@@ -18,8 +18,8 @@ untested proposals.
   enable real poweroff/reboot commands in the nested session.
 - Keep documentation current and commit only this session's changes, using plain git.
 - This checkout is the public repository. Never commit a device address, key path,
-  login or personal name, email, serial number or capture. Commits use the
-  repository's anonymous identity (set in the local Git config; keep it). Run
+  device login, personal email, serial number or capture. Commit as the author in
+  the local Git config (a GitHub noreply address). Run
   `python3 tools/audit-public.py` before pushing.
 - Device connection settings are in `.env` (git-ignored; see `env.example`):
   `ssh -i "$THOR_SSH_KEY" "$THOR_USER@$THOR_HOST"` after `set -a; . ./.env`.
