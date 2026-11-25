@@ -13,14 +13,18 @@ when DisplayPort must be unplugged. A monitor connected afterwards is detected
 
 ## Automatic switching
 
-Each standalone session starts `win4wine-external watch`, which follows the DP-1
+**Windows 7 only.** The XP and ReactOS sessions do not start it, and `watch`
+exits if run in them: neither has driven a monitor this way, and XP is where the
+[earlier display failure](XP.md) happened. Manual `on` still works there but is
+equally untried.
+
+The Win7 session starts `win4wine-external watch`, which follows the DP-1
 connector (a state counts after three one-second readings). Its log is
 `external-watch.txt` in the session's state directory.
 
 - **Plug in:** runs `on`. Then it moves the desktop to the monitor, restarting
   the shell, only if no Windows window is open. A window counts unless its Win32
-  class is the desktop, taskbar or Start menu; unknown classes count, so XP or
-  ReactOS may simply never move. A program with no window at all is not detected
+  class is the desktop, taskbar or Start menu; unknown classes count. A program with no window at all is not detected
   and would be closed by the restart. Otherwise the desktop stays put.
 - **Unplug:** makes the handheld primary again, without restarting anything.
 - A failure is not retried until the cable changes again. Automatic restarts are
