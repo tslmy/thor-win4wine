@@ -39,6 +39,21 @@ class LinkTest(unittest.TestCase):
         self.assertEqual([link.update(False) for _ in range(5)], [None] * 5)
 
 
+class PluggedTest(unittest.TestCase):
+    def enabled_for(self, make, model):
+        plugged, enabled = external['plugged'], []
+        fakes = {'outputs': lambda env: {'DP-1': {'make': make, 'model': model}},
+                 'turn_on': enabled.append}
+        with mock.patch.dict(plugged.__globals__, fakes):
+            plugged({})
+        return bool(enabled)
+
+    def test_only_a_tested_monitor_is_enabled_by_itself(self):
+        self.assertTrue(self.enabled_for('Dell Inc.', 'DELL U3223QE'))
+        self.assertFalse(self.enabled_for('XREAL', 'One Pro'))
+        self.assertFalse(self.enabled_for(None, None))
+
+
 class WatchTest(unittest.TestCase):
     def test_other_shells_are_left_alone(self):
         watch = external['watch']

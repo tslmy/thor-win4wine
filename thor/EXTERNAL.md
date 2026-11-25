@@ -21,7 +21,8 @@ Each Win7 or XP session therefore starts `win4wine-external watch`, which follow
 readings) and logs to `external-watch.txt` in the session's state directory.
 ReactOS does not start it.
 
-- **Plug in:** enables DP-1 at up to 1080p, makes it primary, then watches the
+- **Plug in:** only for a tested monitor (`TESTED_MONITORS`: the Dell U3223QE;
+  others stay off until `win4wine-external on`). Enables DP-1 at up to 1080p, makes it primary, then watches the
   kernel log for 20 s and switches it off again on display errors.
 - **Unplug:** makes the handheld primary again.
 - **Making a screen primary** takes two things: writing its name to the session's
@@ -95,8 +96,21 @@ Installed on the device 2026-11-24, originals in
   register, and the shell restarted about 7 s after the unplug with no X error
   logged. Cause unknown; the supervisor does not record why it restarts.
 
-The Thor was rebooted afterwards; the cable test has not been repeated since. The
-supervisor patch now also writes why it restarts the shell to
+**After a reboot, 2026-11-24:** two Dell round trips, which the user reported as
+working. The log also shows one shell restart while docked, 36 s after the
+second plug-in and before its unplug: `ready=True taskbar=False shell exit=15
+proxy exit=None`, with no X error. Cause unknown.
+
+**Hard reset with XREAL One Pro glasses.** The user plugged the Dell in a third
+time, removed it (22:24:39), plugged in the glasses, and the whole system
+rebooted. The saved journal ends at the Dell removal: nothing about the glasses,
+no panic, no shutdown, empty pstore. Whether the watcher had begun enabling them
+is unknown, so a userspace trigger is not ruled out, and the new restriction
+cannot prevent a crash that happens at plug time. **Do not plug the glasses in
+with unsaved work.** Logs: `~/.local/state/win4wine-xp/xreal-crash-20261124/`.
+
+The
+supervisor patch also writes why it restarts the shell to
 `supervisor-output.txt` (`restarting the shell: ready=… taskbar=… shell exit=…
 proxy exit=…`); read it after the next failure.
 

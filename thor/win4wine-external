@@ -8,7 +8,8 @@ they come back. Nothing is restarted.
 Only the upper panel plus DP-1 at no more than 1080p. DP-1 is switched back off
 if the display driver reports errors shortly after it is enabled.
 
-"watch" does this on plug and unplug, in Windows 7 and XP sessions.
+"watch" does this on plug and unplug, in Windows 7 and XP sessions, and only for
+monitors it has been tested with. "on" tries any other display by hand.
 "desktop external" and "desktop handheld" swap the primary screen by hand.
 """
 import argparse
@@ -25,6 +26,9 @@ UPPER, LOWER, EXTERNAL = 'DSI-2', 'DSI-1', 'DP-1'
 WATCH_SECONDS = 20
 # Consecutive one-second readings before a plug or unplug counts: DP links flap.
 SETTLE = 3
+# (make, model) of the displays "watch" may enable by itself. The Thor reset when
+# XREAL One Pro glasses were plugged in, so nothing untested is enabled unasked.
+TESTED_MONITORS = {('Dell Inc.', 'DELL U3223QE')}
 # ReactOS has never driven a monitor here.
 AUTOMATIC_SHELLS = ('win7', 'xp')
 ERRORS = re.compile(
@@ -213,8 +217,13 @@ def turn_on(env):
 
 def plugged(env):
     for _ in range(15):
-        if EXTERNAL in outputs(env):
-            turn_on(env)
+        found = outputs(env).get(EXTERNAL)
+        if found:
+            monitor = (found.get('make'), found.get('model'))
+            if monitor in TESTED_MONITORS:
+                turn_on(env)
+            else:
+                print(f'Leaving the untested display {monitor} off; "on" tries it by hand.')
             return
         time.sleep(1)
     sys.exit(f'The compositor does not list {EXTERNAL}.')
