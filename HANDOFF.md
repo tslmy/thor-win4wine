@@ -15,6 +15,16 @@ defaults. Public history is redacted/anonymized; old commit IDs may not resolve.
 
 **For the user and Claude / the next agent. Updated 2026-11-23.**
 
+**Controller as mouse, 2026-11-24:** right stick, R1 and R2 now act as a mouse in
+Plasma Desktop Mode and the three shells, via
+[thor-pad-mouse](https://github.com/tslmy/thor-pad-mouse) (local checkout
+`thor-pad-mouse/`). It is installed for the device user as the `pad-mouse` user
+service, which adds InputPlumber mappings in desktop sessions and removes them
+for Gaming Mode. The shells were tested headless with real libinput; a person
+pressing the real controls, and a real session switch, are still unverified.
+In XP, the Start button ignores the first click after a desktop right-click menu
+is dismissed, also with synthetic X11 input.
+
 **Latest overnight update, 2026-11-24:** Windows 7 SP1 x64 Professional is installed
 as a third independent standalone shell and was left running at 120 DPI on the
 upper panel. Headless shell/folder/logoff tests and live shell/folder/Linux-window

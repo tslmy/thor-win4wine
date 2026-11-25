@@ -6,6 +6,8 @@ untested proposals.
 
 - `win4wine/` has its own Git history. Do not vendor it into the parent repository
   or reset its files. The parent repository tracks Thor-specific adaptations.
+- `thor-pad-mouse/` (controller as mouse in desktop sessions) is likewise its own
+  repository; do not vendor it here.
 - Do not run upstream `scripts/setup.sh` directly on Armada: it is designed to
   install system packages and potentially change the display manager.
 - Keep Armada's system FEX, Steam configuration, and bootc image unchanged

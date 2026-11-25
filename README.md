@@ -64,6 +64,8 @@ refer to the original private history and are not public revision selectors.
 - [Windows XP variant](thor/XP.md): the second shell, switching, corrected DPI,
   lower-panel policy, and the display-driver failure/recovery history.
 - [Windows 7 variant](thor/WIN7.md): the third shell, validation and the DWM/Aero blocker.
+- [thor-pad-mouse](https://github.com/tslmy/thor-pad-mouse): separate repository that makes
+  the right stick, R1 and R2 act as a mouse in desktop mode and all three shells.
 
 Device: AYN Thor Pro, Snapdragon 8 Gen 2, 12 GB RAM, running ArmadaOS.
 The initial installation and investigation were performed on 2026-11-23.

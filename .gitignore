@@ -1,5 +1,7 @@
 # Keep the upstream project as its existing, independent Git checkout.
 /win4wine/
+# Independent repository: github.com/tslmy/thor-pad-mouse
+/thor-pad-mouse/
 
 # Runtime artifacts belong on the Thor or in Docker, not in this repository.
 __pycache__/
