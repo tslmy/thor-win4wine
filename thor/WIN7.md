@@ -81,6 +81,27 @@ upper-output captures with/without the cursor. It never enables or modesets outp
 Private native `grim` and `wlrctl` live under `~/.local/share/win4wine/tools/`.
 Do not use `test-win7-headless.py` while the live Win7 prefix is active.
 
+## Fixed 2026-11-24: Recycle Bin double-click restarted the shell
+
+Double-clicking the desktop Recycle Bin blinked the screen black and opened
+nothing: `w7-explorer.exe` ended with `unimplemented function
+rpcrt4.dll.NdrStubCall3` (see `xp-shell.log`) and the supervisor restarted it.
+Microsoft's x64 `actxprxy.dll`/`propsys.dll` stubs call it, and win4wine's patch
+0094 only exports a placeholder.
+[`patches/0001-rpcrt4-NdrStubCall3.patch`](patches/0001-rpcrt4-NdrStubCall3.patch)
+implements it for DCE NDR; `containers/build-wine.sh` applies it after the
+pinned series.
+
+Only `x86_64-windows/rpcrt4.dll` changed on the device. The previous file is
+`~/.local/state/win4wine-win7/rpcrt4.dll.before-NdrStubCall3`. A running shell
+keeps the old DLL until it restarts.
+
+Verified in a headless session on a disposable copy of the prefix and Wine
+install, with synthetic X11 double-clicks: the old DLL reproduced the crash, the
+new one opened the Recycle Bin window. The live shell was restarted and mapped
+the new DLL. A physical double-click has not been confirmed. The 32-bit shells
+were not retested, and `test-win7-headless.py` does not cover this case.
+
 ## Aero: remaining blocker, not a theme checkbox
 
 Upstream explicitly supports **Windows 7 Basic**, not DWM Aero glass, Peek or

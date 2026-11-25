@@ -21,6 +21,11 @@ digest=$(python3 /input/wine/patch-state.py --digest /input/wine/patches)
 expected=$(python3 -c 'import json; print(json.load(open("/tools/sources.json"))["wine_patches_sha256"])')
 [[ $digest == "$expected" ]] || { echo 'Unexpected Wine patch digest.' >&2; exit 1; }
 [[ $(cat /build/source/.thor-source) == "$digest" ]] || { echo 'Patch inputs changed; use a new build directory.' >&2; exit 1; }
+# Thor's own Wine fixes, on top of the pinned series; safe to repeat.
+for fix in /tools/patches/*.patch; do
+    patch -f -R --dry-run -s -d /build/source -p1 < "$fix" >/dev/null 2>&1 ||
+        patch --batch --forward -d /build/source -p1 < "$fix"
+done
 cd /build/wine-out
 extra=()
 for v in {24..43}; do extra+=("--disable-d3dx9_$v"); done

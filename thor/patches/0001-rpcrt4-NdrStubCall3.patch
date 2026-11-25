@@ -1,0 +1,114 @@
+Subject: rpcrt4: implement NdrStubCall3 for the DCE syntax
+
+Windows 7 x64's actxprxy.dll and propsys.dll stubs call NdrStubCall3. As a
+spec stub it ended w7-explorer ("unimplemented function") when a
+double-clicked desktop icon such as the Recycle Bin was opened, so the
+screen blinked and the shell restarted. Thor addition on top of win4wine's
+series.
+
+--- a/dlls/rpcrt4/ndr_stubless.c	2026-11-24 20:10:40
++++ b/dlls/rpcrt4/ndr_stubless.c	2026-11-24 20:10:40
+@@ -1212,6 +1212,10 @@
+     }
+     return retval_ptr;
+ }
++
++static LONG ndr_stub_call( struct IRpcStubBuffer *pThis, struct IRpcChannelBuffer *pChannel,
++                           PRPC_MESSAGE pRpcMsg, const MIDL_SERVER_INFO *pServerInfo,
++                           PFORMAT_STRING pFormat );
+ 
+ /***********************************************************************
+  *            NdrStubCall2 [RPCRT4.@]
+@@ -1229,8 +1233,23 @@
+     DWORD * pdwStubPhase)
+ {
+     const MIDL_SERVER_INFO *pServerInfo;
++
++    TRACE("pThis %p, pChannel %p, pRpcMsg %p, pdwStubPhase %p\n", pThis, pChannel, pRpcMsg, pdwStubPhase);
++
++    if (pThis)
++        pServerInfo = CStdStubBuffer_GetServerInfo(pThis);
++    else
++        pServerInfo = ((RPC_SERVER_INTERFACE *)pRpcMsg->RpcInterfaceInformation)->InterpreterInfo;
++
++    return ndr_stub_call( pThis, pChannel, pRpcMsg, pServerInfo,
++                          pServerInfo->ProcString + pServerInfo->FmtStringOffset[pRpcMsg->ProcNum] );
++}
++
++static LONG ndr_stub_call( struct IRpcStubBuffer *pThis, struct IRpcChannelBuffer *pChannel,
++                           PRPC_MESSAGE pRpcMsg, const MIDL_SERVER_INFO *pServerInfo,
++                           PFORMAT_STRING pFormat )
++{
+     const MIDL_STUB_DESC *pStubDesc;
+-    PFORMAT_STRING pFormat;
+     MIDL_STUB_MESSAGE stubMsg;
+     /* pointer to start of stack to pass into stub implementation */
+     unsigned char * args;
+@@ -1252,15 +1271,7 @@
+     /* correlation cache */
+     ULONG_PTR NdrCorrCache[256];
+ 
+-    TRACE("pThis %p, pChannel %p, pRpcMsg %p, pdwStubPhase %p\n", pThis, pChannel, pRpcMsg, pdwStubPhase);
+-
+-    if (pThis)
+-        pServerInfo = CStdStubBuffer_GetServerInfo(pThis);
+-    else
+-        pServerInfo = ((RPC_SERVER_INTERFACE *)pRpcMsg->RpcInterfaceInformation)->InterpreterInfo;
+-
+     pStubDesc = pServerInfo->pStubDesc;
+-    pFormat = pServerInfo->ProcString + pServerInfo->FmtStringOffset[pRpcMsg->ProcNum];
+     pProcHeader = (const NDR_PROC_HEADER *)&pFormat[0];
+ 
+     if (pProcHeader->Oi_flags & Oi_OBJECT_PROC)
+@@ -2169,6 +2180,40 @@
+ static const RPC_SYNTAX_IDENTIFIER ndr_syntax_id =
+     {{0x8a885d04, 0x1ceb, 0x11c9, {0x9f, 0xe8, 0x08, 0x00, 0x2b, 0x10, 0x48, 0x60}}, {2, 0}};
+ 
++/***********************************************************************
++ *            NdrStubCall3 [RPCRT4.@]
++ *
++ * Stub entry point of interfaces built with both DCE and NDR64 syntax, as
++ * in 64-bit Windows proxy/stub DLLs. Only DCE NDR is supported, which is
++ * what the proxies send through this implementation.
++ */
++LONG WINAPI NdrStubCall3( struct IRpcStubBuffer *This, struct IRpcChannelBuffer *channel,
++                          PRPC_MESSAGE msg, DWORD *phase )
++{
++    const MIDL_SERVER_INFO *info;
++    ULONG_PTR i;
++
++    TRACE("This %p, channel %p, msg %p, phase %p\n", This, channel, msg, phase);
++
++    if (This)
++        info = CStdStubBuffer_GetServerInfo(This);
++    else
++        info = ((RPC_SERVER_INTERFACE *)msg->RpcInterfaceInformation)->InterpreterInfo;
++
++    for (i = 0; i < info->nCount; ++i)
++    {
++        const MIDL_SYNTAX_INFO *syntax_info = &info->pSyntaxInfo[i];
++
++        if (!memcmp(&syntax_info->TransferSyntax, &ndr_syntax_id, sizeof(RPC_SYNTAX_IDENTIFIER)))
++            return ndr_stub_call( This, channel, msg, info,
++                                  syntax_info->ProcString + syntax_info->FmtStringOffset[msg->ProcNum] );
++    }
++
++    FIXME("NDR64 syntax is not supported.\n");
++    RpcRaiseException(RPC_S_UNSUPPORTED_TRANS_SYN);
++    return 0;
++}
++
+ LONG_PTR CDECL ndr64_client_call( MIDL_STUBLESS_PROXY_INFO *info,
+         ULONG proc, void *retval, void **stack_top )
+ {
+--- a/dlls/rpcrt4/rpcrt4.spec	2026-11-24 20:10:40
++++ b/dlls/rpcrt4/rpcrt4.spec	2026-11-24 20:10:40
+@@ -295,7 +295,7 @@
+ @ stdcall NdrSimpleTypeMarshall(ptr ptr long)
+ @ stdcall NdrSimpleTypeUnmarshall(ptr ptr long)
+ @ stdcall NdrStubCall2(ptr ptr ptr ptr)
+-@ stub NdrStubCall3
++@ stdcall NdrStubCall3(ptr ptr ptr ptr)
+ @ stdcall NdrStubCall(ptr ptr ptr ptr)
+ @ stdcall NdrStubForwardingFunction(ptr ptr ptr ptr)
+ @ stdcall NdrStubGetBuffer(ptr ptr ptr)
