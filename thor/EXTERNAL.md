@@ -114,15 +114,17 @@ watcher running (same day, Armada 20261109.dfed5d6, kernel 7.2.6). Both plug-ins
 gave "no signal" and froze touch until after unplugging, when the queued touches
 arrived together. No reboot. While plugged in the kernel logged, about 29 times a
 second, `[dpu error]unable to find appropriate mixers`, `failed to reserve hw
-resources: -119` and `LM_4/LM_5, invalid DSPP_-1`, plus one DP `aux read failed
-rlen=-110`; KWin reported `Modeset failed`. Bursts: 22:29:04-22:29:51 and
+resources: -119` and `LM_4/LM_5, invalid DSPP_-1`; KWin reported `Modeset failed`. (One DP
+`aux read failed rlen=-110` came 8 s after the second unplug.) Bursts: 22:29:04-22:29:51 and
 22:30:54-22:33:04. These match the first three-output failure in [XP.md](XP.md).
 So the glasses problem is in Armada or its kernel display driver. Whether it is
 what reset the Thor in XP is not established. KWin identifies the glasses as
 `MRG`; the mode it attempted was not recorded. Reported upstream as
-[armada#943](https://github.com/armada-os/armada/issues/943). A related
+[armada#943](https://github.com/armada-os/armada/issues/943). A
 [comment on armada#755](https://github.com/armada-os/armada/issues/755) traces
-XREAL "no signal" on an Odin 3 to a Type-C mux race; not checked on the Thor.
+XREAL "no signal" on an Odin 3 to a Type-C mux race in `wcd939x-usbss`. The Thor
+does not load that driver (it uses `gpio_sbu_mux`) and gets as far as modesets, so
+it looks like a different failure.
 Logs: `~/.local/state/win4wine-xp/xreal-plasma-2233/`.
 
 The
