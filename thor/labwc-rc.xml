@@ -14,7 +14,16 @@
     <keybind key="XF86_AudioRaiseVolume"><action name="Execute" command="wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+" /></keybind>
     <keybind key="XF86_AudioMute"><action name="Execute" command="wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle" /></keybind>
   </keyboard>
-  <mouse><default /></mouse>
+  <mouse>
+    <default />
+    <!-- Bare background, such as a second screen that Explorer does not cover,
+         would open labwc's Reconfigure / Exit menu. Exit ends the session. -->
+    <context name="Root">
+      <mousebind button="Left" action="Press"><action name="None" /></mousebind>
+      <mousebind button="Right" action="Press"><action name="None" /></mousebind>
+      <mousebind button="Middle" action="Press"><action name="None" /></mousebind>
+    </context>
+  </mouse>
   <touch deviceName="top_touchscreen" mapToOutput="DSI-2" mouseEmulation="yes" />
   <touch deviceName="bottom_touchscreen" mapToOutput="DSI-1" mouseEmulation="yes" />
   <libinput><device category="bottom_touchscreen"><sendEventsMode>no</sendEventsMode></device></libinput>

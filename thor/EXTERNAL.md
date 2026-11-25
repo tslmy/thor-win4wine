@@ -27,11 +27,13 @@ connector (a state counts after three one-second readings). Its log is
   at least 150 s apart, because the supervisor gives up after three in 120 s.
 - `off` by hand lasts until the next replug.
 
-Tested on Win7: unplug returned a normal desktop to the handheld, and replug
-enabled the monitor and kept the desktop on the handheld because a window was
-open. **The automatic move with no window open has not run on the device**, and
-neither has a session that started the watcher itself: on 2026-11-24 it was
-started by hand with `systemd-run --user` in the running session.
+Tested on Win7: unplug returned a normal desktop to the handheld; replug enabled
+the monitor and kept the desktop on the handheld while a window was open; with
+no window open, the watcher moved the desktop to the monitor and restarted the
+shell (compositor screenshots, no driver errors). That last run was triggered by
+restarting the watcher with the monitor connected, not by the cable. A session
+that starts the watcher itself is still untested: on 2026-11-24 it was started
+by hand with `systemd-run --user` in the running session.
 
 ## Manual use
 
@@ -64,15 +66,21 @@ Writing the IPC `primary` file at runtime changed RandR's primary flag but not t
 screen positions in Xwayland: it holds the new xdg-output positions until the
 output reports a change. The result was wallpaper on one screen, taskbar on the
 other. `desktop` nudges each output's position by one pixel and back, then
-restarts the shell, which fixed it. The nudge was verified by hand before one
-restart; the finished `desktop` command was not rerun end to end afterwards.
+restarts the shell, which fixed it. The finished command has since run end to end
+through the watcher.
+
+## The Reconfigure / Exit menu (fixed)
+
+Clicking an area no Windows window covers, such as the second screen, opened
+labwc's own menu, where Exit ends the session. The shipped `menu.xml` defines an
+empty `root-menu`, and labwc 0.8.3 fills an empty root menu with those two items
+(`init_rootmenu` in `src/menu/menu.c`). `labwc-rc.xml` now unbinds all three
+mouse buttons on the bare background. Verified with synthetic clicks on DP-1:
+the menu appeared before and not after. A running session picks the file up on
+`SIGHUP` to labwc.
 
 ## Known problems
 
-- Right-clicking an area no Windows window covers (the secondary screen) opens
-  labwc's own menu, **Reconfigure / Exit**. Exit ends the session. The shipped
-  `menu.xml` defines an empty `root-menu`, and labwc 0.8.3 fills an empty root
-  menu with those two items (`init_rootmenu` in `src/menu/menu.c`). Not fixed.
 - A Control Panel window dragged to the secondary screen stayed there with its
   caption buttons off the right edge. Cause not investigated.
 
