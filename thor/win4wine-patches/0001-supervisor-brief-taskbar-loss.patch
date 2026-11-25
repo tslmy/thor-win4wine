@@ -1,0 +1,34 @@
+Subject: supervisor: tolerate a taskbar that is hidden for a moment
+
+Removing a monitor makes the taskbar unmap and map again within about 35 ms.
+The supervisor woke on the unmap, saw no taskbar and restarted the shell,
+closing every program. Give it two seconds to come back, unless the shell has
+exited. Thor addition on top of the pinned win4wine source.
+
+--- a/session/supervisor.py	2026-11-24 21:42:49
++++ b/session/supervisor.py	2026-11-24 21:42:50
+@@ -384,6 +384,15 @@
+             return self.tray()
+         return False
+ 
++    def tray_returns(self, shell, seconds=2):
++        """A display change hides the taskbar for a moment: wait before giving up on it."""
++        deadline = time.monotonic() + seconds
++        while time.monotonic() < deadline and shell.poll() is None and not self.stopping:
++            time.sleep(.05)
++            if self.tray():
++                return True
++        return False
++
+     def wait(self, processes, timeout=None):
+         """Sleep until a window changes, one of the processes exits, a signal comes or the timeout passes."""
+         fds = [self.d.fileno(), self.wakeup[0]]
+@@ -531,7 +540,7 @@
+                     self.hide_welcome()
+                     if attempt == 1:
+                         self.play_sound('SystemStart')
+-                if ready and not has_tray:
++                if ready and not has_tray and not self.tray_returns(shell):
+                     break
+                 if not ready and (time.monotonic()-started > self.readiness_timeout or shell.poll() is not None):
+                     break

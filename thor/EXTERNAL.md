@@ -5,8 +5,9 @@ taskbar and open windows move to it, and the upper panel becomes the second
 screen. Unplug, and they come back. Nothing is restarted. The lower panel stays
 off. Measured on 2026-11-24 with a Dell U3223QE on DP-1 at 1920x1080/60 Hz.
 
-**Open bug: unplugging can still restart the XP shell and close its windows.**
-See [below](#open-bug-unplugging-can-restart-the-shell).
+**Not reliable yet: unplugging can restart the XP shell and close its windows,
+and repeated plugging can fail in the kernel.** See
+[below](#open-problems-unplugging-and-the-usb-c-link).
 
 ## How it works
 
@@ -65,19 +66,34 @@ still refuse to start with it connected.
 - Not tried: ReactOS, monitor audio, suspend/resume, long-run stability, 4K
   (still excluded).
 
-## Open bug: unplugging can restart the shell
+## Open problems: unplugging and the USB-C link
 
-Removing the monitor removes an X output. A Wine process that later asks about it
-gets a fatal `X Error: BadRROutput` (`RRGetOutputInfo`), the supervisor restarts
-the shell, and Windows programs are closed. Seen on XP several times, not on
-every unplug; once the restart came only at the first click afterwards. Errors
-appeared in `xp-shell.log` or `proxy.log`, sometimes with `BadWindow`
-(`X_UnmapWindow`) as well. Not seen in the few Win7 unplugs.
+Two causes of restarts on unplug were found and patched:
 
-`dlls/winex11.drv/xrandr.c` calls `XRRGetOutputInfo` with stored output IDs in
-several places without `X11DRV_expect_error`, though the file already uses that
-guard for another call. Guarding them is the likely fix; it has not been written
-or built, and whether `BadWindow` is a separate problem is unknown.
+1. **Wine** treated `BadRROutput` (`XRRGetOutputInfo` on a removed output) as
+   fatal. Reproduced by `wlr-randr --output DP-1 --off` on the first try.
+   [`patches/0002-winex11-tolerate-removed-output.patch`](patches/0002-winex11-tolerate-removed-output.patch)
+   ignores `BadRROutput`, `BadRRCrtc` and `BadWindow` from `UnmapWindow`. No
+   such error appeared in the few removals afterwards.
+2. **win4wine's supervisor** restarted the shell because the taskbar unmaps for
+   about 35 ms on removal.
+   [`win4wine-patches/0001-supervisor-brief-taskbar-loss.patch`](win4wine-patches/0001-supervisor-brief-taskbar-loss.patch)
+   waits two seconds. `tools/thor.py` applies it to the pinned source.
+
+Installed on the device 2026-11-24, originals in
+`~/.local/state/win4wine-xp/driver-backup/` (`winex11.so.before-removed-output`,
+`supervisor.py.before-taskbar-grace`). The Wine build is shared by all three shells.
+
+**The real-cable test afterwards failed, so neither fix is proven:**
+
+- Two of three plug-ins gave no picture. The compositor logged no DP connection
+  and `wlr-randr` timed out after 10 s. The kernel had logged
+  `qcom-qmp-combo-phy: phy init failed --> -110`, warnings in
+  `qmp_combo_typec_switch_set`, and USB controller runtime-PM errors. This is
+  below userspace; its cause is unknown. A reboot has not been tried.
+- On the one good plug-in, the user reported that mouse and touch did not
+  register, and the shell restarted about 7 s after the unplug with no X error
+  logged. Cause unknown; the supervisor does not record why it restarts.
 
 The supervisor falls back after three shell exits in two minutes.
 

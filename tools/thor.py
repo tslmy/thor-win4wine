@@ -38,12 +38,23 @@ def download(url, path, digest=None):
     return actual
 
 
+def patch_source():
+    """Thor's own fixes to the pinned win4wine source; safe to repeat."""
+    for fix in sorted((ROOT / 'thor/win4wine-patches').glob('*.patch')):
+        command = ['patch', '-p1', '-s', '-f', '-d', str(SOURCE), '-i', str(fix)]
+        applied = subprocess.run(command + ['-R', '--dry-run'], stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.DEVNULL).returncode == 0
+        if not applied:
+            subprocess.run(command, check=True)
+
+
 def source():
     pin = SOURCES['win4wine']
     marker = SOURCE / '.thor-source.json'
     if SOURCE.exists():
         if not marker.is_file() or json.loads(marker.read_text()) != pin:
             raise SystemExit(f'Refusing unexpected existing source: {SOURCE}')
+        patch_source()
         return
     archive = BUILD / 'downloads/win4wine.tar.gz'
     digest = download(f"{pin['url']}/archive/{pin['commit']}.tar.gz", archive,
@@ -58,6 +69,7 @@ def source():
             tar.extract(member, SOURCE, filter='data')
     marker.write_text(json.dumps(pin) + '\n')
     (BUILD / 'source-download-sha256.txt').write_text(digest + '\n')
+    patch_source()
 
 
 def docker_image(kind):

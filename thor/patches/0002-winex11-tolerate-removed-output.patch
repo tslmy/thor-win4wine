@@ -1,0 +1,57 @@
+Subject: winex11: survive an output removed while it is being queried
+
+Unplugging the external monitor removes an X output. A Wine process that then
+asked about it got BadRROutput from RRGetOutputInfo, which Xlib treats as
+fatal, so the shell restarted and closed every program (first seen as a restart
+on the first click after unplugging). Every XRRGetOutputInfo/XRRGetCrtcInfo
+caller already handles a NULL reply, so ignore BadRROutput and BadRRCrtc.
+Also ignore BadWindow from UnmapWindow, seen alone in one such restart.
+Thor addition on top of win4wine's series.
+
+--- a/dlls/winex11.drv/x11drv.h	2026-11-24 21:27:29
++++ b/dlls/winex11.drv/x11drv.h	2026-11-24 21:27:37
+@@ -476,6 +476,7 @@
+ extern int copy_default_colors;
+ extern int alloc_system_colors;
+ extern int xrender_error_base;
++extern int xrandr_error_base;
+ extern char *process_name;
+ extern Display *clipboard_display;
+ 
+--- a/dlls/winex11.drv/x11drv_main.c	2026-11-24 21:27:29
++++ b/dlls/winex11.drv/x11drv_main.c	2026-11-24 21:27:37
+@@ -82,6 +82,7 @@
+ int copy_default_colors = 128;
+ int alloc_system_colors = 256;
+ int xrender_error_base = 0;
++int xrandr_error_base = 0;
+ char *process_name = NULL;
+ 
+ static x11drv_error_callback err_callback;   /* current callback for error */
+@@ -209,6 +210,16 @@
+         (event->error_code == BadMatch ||
+          event->error_code == BadWindow)) return TRUE;
+ 
++    /* unmapping a window that is already gone changes nothing */
++    if (event->request_code == X_UnmapWindow && event->error_code == BadWindow) return TRUE;
++
++#ifdef HAVE_X11_EXTENSIONS_XRANDR_H
++    /* an output or CRTC can be removed between reading the screen resources and
++     * asking about it; the queries all cope with the missing reply */
++    if (xrandr_error_base && (event->error_code == xrandr_error_base + BadRROutput ||
++                              event->error_code == xrandr_error_base + BadRRCrtc)) return TRUE;
++#endif
++
+     /* the clipboard display interacts with external windows, ignore all errors */
+     if (display == clipboard_display) return TRUE;
+ 
+--- a/dlls/winex11.drv/xrandr.c	2026-11-24 21:27:29
++++ b/dlls/winex11.drv/xrandr.c	2026-11-24 21:27:37
+@@ -1679,6 +1679,7 @@
+ 
+     /* see if Xrandr is available */
+     if (!pXRRQueryExtension( gdi_display, &event_base, &error_base )) return;
++    xrandr_error_base = error_base;
+     X11DRV_expect_error( gdi_display, XRandRErrorHandler, NULL );
+     ok = pXRRQueryVersion( gdi_display, &major, &minor );
+     if (X11DRV_check_error() || !ok) return;

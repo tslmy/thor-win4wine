@@ -59,7 +59,7 @@ not); see
 [EXTERNAL.md](EXTERNAL.md).** Switching with DP connected is still untested.
 XP itself later drove the monitor at 1080p with the lower panel off, using the
 manual commands; the user confirmed the picture. Plugging in now moves the
-desktop and windows to the monitor; unplugging can still restart the shell.
+desktop and windows to the monitor; unplugging is not yet reliable.
 
 **For now, disconnect DisplayPort before switching or selecting either shell.**
 The switch command/worker and both standalone launchers enforce this guard after

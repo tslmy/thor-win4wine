@@ -17,8 +17,9 @@ defaults. Public history is redacted/anonymized; old commit IDs may not resolve.
 
 **External monitor, 2026-11-24 (evening):** upper panel plus DP-1 at 1080p worked
 in running Win7 and XP sessions. In Win7 and XP, `win4wine-external watch` moves
-the desktop and windows to a monitor on plug-in and back on unplug. Open bug: an
-unplug can restart the shell (Wine `BadRROutput`). This supersedes
+the desktop and windows to a monitor on plug-in and back on unplug. Not reliable:
+unplug can restart the shell, and repeated plugging hit kernel USB-C PHY errors.
+Wine and supervisor patches are installed but unproven. This supersedes
 the "DP unvalidated" notes below for that case only; see
 [thor/EXTERNAL.md](thor/EXTERNAL.md).
 
