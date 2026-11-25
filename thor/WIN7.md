@@ -92,6 +92,10 @@ Microsoft's x64 `actxprxy.dll`/`propsys.dll` stubs call it, and win4wine's patch
 implements it for DCE NDR; `containers/build-wine.sh` applies it after the
 pinned series.
 
+Submitted upstream, folded into patch 0094, as draft
+[mikuta0407/win4wine#7](https://github.com/mikuta0407/win4wine/pull/7). Drop the
+local patch once the pinned win4wine commit includes it.
+
 Only `x86_64-windows/rpcrt4.dll` changed on the device. The previous file is
 `~/.local/state/win4wine-win7/rpcrt4.dll.before-NdrStubCall3`. A running shell
 keeps the old DLL until it restarts.
