@@ -15,13 +15,11 @@ defaults. Public history is redacted/anonymized; old commit IDs may not resolve.
 
 **For the user and Claude / the next agent. Updated 2026-11-23.**
 
-**External monitor, 2026-11-24 (evening):** upper panel plus DP-1 at 1080p worked
-in running Win7 and XP sessions. In Win7 and XP, `win4wine-external watch` moves
-the desktop and windows to a monitor on plug-in and back on unplug. Not reliable:
-unplug can restart the shell, and repeated plugging hit kernel USB-C PHY errors.
-Wine and supervisor patches are installed but unproven. This supersedes
-the "DP unvalidated" notes below for that case only; see
-[thor/EXTERNAL.md](thor/EXTERNAL.md).
+**External monitor, 2026-11-24 (evening):** in Win7 and XP, kanshi docks and
+undocks the Dell at 1080p beside the upper panel; the desktop and windows follow
+without a restart. Neither shell sets `primary` any more. This supersedes the "DP
+unvalidated" notes below for that case only. XREAL glasses fail even in stock
+Plasma. See [thor/EXTERNAL.md](thor/EXTERNAL.md).
 
 **Controller as mouse, 2026-11-24:** right stick, R1 and R2 now act as a mouse in
 Plasma Desktop Mode and the three shells, via

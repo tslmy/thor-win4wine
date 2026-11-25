@@ -1,0 +1,16 @@
+# Laptop-style docking in the Windows 7 and XP sessions; see EXTERNAL.md.
+# The shells set no "primary", so the leftmost screen is Windows' primary one.
+# A profile applies only when exactly its outputs are connected, so an untested
+# display matches neither and stays off. The lower panel is never enabled, and
+# the monitor is held to 1080p.
+
+profile docked {
+	output "Dell Inc. DELL U3223QE *" enable mode 1920x1080 position 0,0 scale 1 transform normal
+	output DSI-2 enable mode 1080x1920@60Hz position 1920,0 scale 1.5 transform 270
+	output DSI-1 disable
+}
+
+profile handheld {
+	output DSI-2 enable mode 1080x1920@60Hz position 0,0 scale 1.5 transform 270
+	output DSI-1 disable
+}

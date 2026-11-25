@@ -5,7 +5,7 @@ config=${WIN4WINE_STANDALONE_CONFIG:?Missing Win7 config}
 state=$HOME/.local/state/win4wine-win7
 finish() {
     [[ -z ${agent_pid:-} ]] || kill "$agent_pid" 2>/dev/null || true
-    [[ -z ${external_pid:-} ]] || kill "$external_pid" 2>/dev/null || true
+    [[ -z ${kanshi_pid:-} ]] || kill "$kanshi_pid" 2>/dev/null || true
     [[ -z ${LABWC_PID:-} ]] || kill -TERM "$LABWC_PID" 2>/dev/null || true
 }
 trap finish EXIT
@@ -17,10 +17,10 @@ if [[ -x $agent ]]; then
     "$agent" > "$state/polkit.log" 2>&1 &
     agent_pid=$!
 fi
-# Enable a monitor plugged in later. Not *.log: the supervisor rotates those.
-external=$HOME/.local/bin/win4wine-external
-if [[ -x $external ]]; then
-    "$external" watch > "$state/external-watch.txt" 2>&1 &
-    external_pid=$!
+# Dock and undock an external monitor. Not *.log: the supervisor rotates those.
+if [[ -x $base/kanshi/bin/kanshi ]]; then
+    LD_LIBRARY_PATH="$base/kanshi/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+        "$base/kanshi/bin/kanshi" -c "$base/tools/kanshi-config" > "$state/kanshi.txt" 2>&1 &
+    kanshi_pid=$!
 fi
 python3 "$HOME/win4wine/session/supervisor.py" --config "$config" >> "$state/supervisor-output.txt" 2>&1

@@ -16,7 +16,7 @@ The recipes fetch/build these projects; their own licenses and notices apply:
 - [libsfdo](https://gitlab.freedesktop.org/vyivel/libsfdo): see its source license.
 - [ReactOS](https://reactos.org/): GPL/LGPL and component-specific licenses;
   upstream extractor records the release/source and checks its SHA-256.
-- Debian/Fedora, Xvfb, Python Xlib, grim, wlrctl, wlr-randr and other dependencies:
+- Debian/Fedora, Xvfb, Python Xlib, grim, wlrctl, wlr-randr, kanshi (with libscfg, vali and aml) and other dependencies:
   each retains its own source/license. The private rootfs is not a distributable
   appliance from this repository.
 

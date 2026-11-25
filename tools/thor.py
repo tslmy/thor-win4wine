@@ -126,10 +126,15 @@ def build_native():
     container('native', 'set -e; bash /tools/build-labwc-inner.sh; '
               'mkdir -p /build/support/tools /build/support/python; '
               'cp /usr/bin/grim /usr/bin/wlrctl /usr/bin/wlr-randr /build/support/tools/; '
+              # kanshi and the libraries Armada's image lacks.
+              'mkdir -p /build/support/kanshi/bin /build/support/kanshi/lib64; '
+              'cp /usr/bin/kanshi /usr/bin/kanshictl /build/support/kanshi/bin/; '
+              'cp -L /usr/lib64/libscfg.so.2 /usr/lib64/libvali.so.1 /usr/lib64/libaml.so.0 '
+              '/build/support/kanshi/lib64/; '
               'python3 -c "import Xlib,six,shutil; shutil.copytree(Xlib.__path__[0], '
               '\'/build/support/python/Xlib\', dirs_exist_ok=True); '
               'shutil.copyfile(six.__file__, \'/build/support/python/six.py\')"; '
-              'tar -C /build/support -czf /build/native-support.tar.gz tools python',
+              'tar -C /build/support -czf /build/native-support.tar.gz tools python kanshi',
               extra=('-e', 'THOR_SKIP_PACKAGES=1', '-e', 'THOR_LABWC_PREFIX=/opt/thor/labwc'))
 
 

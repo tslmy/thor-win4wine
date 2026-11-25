@@ -87,7 +87,6 @@ with (state / 'installation.log').open('w') as log:
             'locale': 'en_US.UTF-8', 'linux_font': 'Segoe UI', 'linux_menu': True,
             'welcome_screen': False, 'cursor_theme': 'win4wine-win7',
             'shutdown_command': None, 'reboot_command': None, 'readiness_timeout': 120,
-            'primary': 'DSI-2',
         }, indent=2) + '\n')
         print('Windows 7 standalone prefix/config ready.', flush=True)
     finally:

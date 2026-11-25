@@ -83,7 +83,7 @@ with (state / 'installation.log').open('w') as log:
             'shell': 'xp', 'wine': str(wine), 'prefix': str(prefix), 'state': str(state),
             'locale': 'en_US.UTF-8', 'linux_font': 'Tahoma', 'linux_menu': True,
             'welcome_screen': False, 'cursor_theme': 'win4wine-xp', 'shutdown_command': None,
-            'reboot_command': None, 'readiness_timeout': 90, 'primary': 'DSI-2',
+            'reboot_command': None, 'readiness_timeout': 90,
         }, indent=2) + '\n')
         print(f'XP/Luna prefix and configuration ready: {prefix}', flush=True)
     finally:

@@ -53,13 +53,9 @@ an eight-minute rollback, accepts the new session after ten seconds of stable
 software readiness, and rolls back on startup failure. **Software readiness is
 not proof of physical display health.** No permanent autologin/default change is made.
 
-**Upper+DP at 1080p has since worked inside a running Win7 session, and Win7
-sessions now enable a hotplugged monitor within those limits (XP and ReactOS do
-not); see
-[EXTERNAL.md](EXTERNAL.md).** Switching with DP connected is still untested.
-XP itself later drove the monitor at 1080p with the lower panel off, using the
-manual commands; the user confirmed the picture. Plugging in now moves the
-desktop and windows to the monitor; unplugging is not yet reliable.
+**Upper+DP at 1080p has since worked in running Win7 and XP sessions: kanshi
+docks and undocks the tested monitor. See [EXTERNAL.md](EXTERNAL.md).**
+Switching with DP connected is still untested.
 
 **Switch from a desktop session, not straight from Gaming Mode.** On 2026-11-24,
 just after a reboot, `win4wine-switch xp` from Gaming Mode failed: labwc got

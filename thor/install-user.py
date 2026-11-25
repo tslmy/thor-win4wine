@@ -48,7 +48,7 @@ def install(stage, home=None):
             target.chmod(0o755 if path.read_text().startswith('#!') else 0o644)
     bins = home / '.local/bin'
     bins.mkdir(parents=True, exist_ok=True)
-    for name in ('win4wine-switch', 'win4wine-external', 'reactos-standalone-session', 'xp-standalone-session', 'win7-standalone-session'):
+    for name in ('win4wine-switch', 'reactos-standalone-session', 'xp-standalone-session', 'win7-standalone-session'):
         target = bins / name
         if target.exists() or target.is_symlink():
             raise SystemExit(f'Refusing existing command: {target}')
@@ -69,8 +69,11 @@ def install(stage, home=None):
     config.mkdir()
     shutil.copy2(tools / 'labwc-rc.xml', config / 'rc.xml')
     shutil.copy2(root / '.local/bridge/shell-ui-probe-x64.exe', tools / 'shell-ui-probe-x64.exe')
-    for binary in (base / 'labwc/bin/labwc', base / 'labwc/bin/Xvfb', tools / 'grim', tools / 'wlr-randr'):
-        result = subprocess.run(['ldd', str(binary)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    kanshi_libraries = dict(os.environ, LD_LIBRARY_PATH=str(base / 'kanshi/lib64'))
+    for binary in (base / 'labwc/bin/labwc', base / 'labwc/bin/Xvfb', tools / 'grim', tools / 'wlr-randr',
+                   base / 'kanshi/bin/kanshi'):
+        result = subprocess.run(['ldd', str(binary)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                                env=kanshi_libraries if binary.name == 'kanshi' else None)
         if result.returncode or 'not found' in result.stdout:
             raise SystemExit(f'Unresolved native dependencies for {binary}:\n{result.stdout}')
     (base / 'installation.json').write_text(json.dumps({

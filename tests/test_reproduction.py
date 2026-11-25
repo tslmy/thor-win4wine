@@ -161,7 +161,7 @@ class ReproductionTests(unittest.TestCase):
                 'rootfs.tar': ['usr/lib/x86_64-linux-gnu/placeholder'],
                 'box64.tar.gz': ['usr/local/bin/box64'],
                 'labwc-arm64.tar.gz': ['labwc/bin/labwc', 'labwc/bin/Xvfb'],
-                'native-support.tar.gz': ['tools/grim', 'tools/wlrctl', 'tools/wlr-randr', 'python/Xlib/placeholder'],
+                'native-support.tar.gz': ['tools/grim', 'tools/wlrctl', 'tools/wlr-randr', 'python/Xlib/placeholder', 'kanshi/bin/kanshi'],
             }
             import io
             for archive, names in contents.items():
