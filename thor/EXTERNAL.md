@@ -95,6 +95,11 @@ Installed on the device 2026-11-24, originals in
   register, and the shell restarted about 7 s after the unplug with no X error
   logged. Cause unknown; the supervisor does not record why it restarts.
 
+The Thor was rebooted afterwards; the cable test has not been repeated since. The
+supervisor patch now also writes why it restarts the shell to
+`supervisor-output.txt` (`restarting the shell: ready=… taskbar=… shell exit=…
+proxy exit=…`); read it after the next failure.
+
 The supervisor falls back after three shell exits in two minutes.
 
 ## Other findings

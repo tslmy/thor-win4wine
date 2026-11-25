@@ -1,16 +1,19 @@
-Subject: supervisor: tolerate a taskbar that is hidden for a moment
+Subject: supervisor: tolerate a briefly hidden taskbar, and log restarts
 
 Removing a monitor makes the taskbar unmap and map again within about 35 ms.
 The supervisor woke on the unmap, saw no taskbar and restarted the shell,
 closing every program. Give it two seconds to come back, unless the shell has
-exited. Thor addition on top of the pinned win4wine source.
+exited. Also print why the shell is being restarted. Thor addition on top of
+the pinned win4wine source.
 
---- a/session/supervisor.py	2026-11-24 21:42:49
-+++ b/session/supervisor.py	2026-11-24 21:42:50
-@@ -384,6 +384,15 @@
+--- a/session/supervisor.py	2026-11-24 22:01:45
++++ b/session/supervisor.py	2026-11-24 22:01:45
+@@ -382,6 +382,15 @@
+         if self.tray_window is not None:
+             self.tray_window = None
              return self.tray()
-         return False
- 
++        return False
++
 +    def tray_returns(self, shell, seconds=2):
 +        """A display change hides the taskbar for a moment: wait before giving up on it."""
 +        deadline = time.monotonic() + seconds
@@ -18,11 +21,9 @@ exited. Thor addition on top of the pinned win4wine source.
 +            time.sleep(.05)
 +            if self.tray():
 +                return True
-+        return False
-+
+         return False
+ 
      def wait(self, processes, timeout=None):
-         """Sleep until a window changes, one of the processes exits, a signal comes or the timeout passes."""
-         fds = [self.d.fileno(), self.wakeup[0]]
 @@ -531,7 +540,7 @@
                      self.hide_welcome()
                      if attempt == 1:
@@ -32,3 +33,13 @@ exited. Thor addition on top of the pinned win4wine source.
                      break
                  if not ready and (time.monotonic()-started > self.readiness_timeout or shell.poll() is not None):
                      break
+@@ -544,6 +553,9 @@
+                 break
+             if self.end_requested(shell):
+                 return
++            # Say why: a restart closes every program, and nothing else records the cause.
++            print(time.strftime('%F %T'), f'restarting the shell: ready={ready} taskbar={self.tray()} '
++                  f'shell exit={shell.poll()} proxy exit={proxy.poll()}', file=sys.stderr, flush=True)
+             self.halt(shell)
+             self.halt(proxy)
+             # Release the prior desktop manager too; environment is inherited at its creation.

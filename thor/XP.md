@@ -61,6 +61,11 @@ XP itself later drove the monitor at 1080p with the lower panel off, using the
 manual commands; the user confirmed the picture. Plugging in now moves the
 desktop and windows to the monitor; unplugging is not yet reliable.
 
+**Switch from a desktop session, not straight from Gaming Mode.** On 2026-11-24,
+just after a reboot, `win4wine-switch xp` from Gaming Mode failed: labwc got
+`/dev/dri/card1: Device or resource busy`, and the rollback selected Plasma.
+Switching again from Plasma worked. Seen once.
+
 **For now, disconnect DisplayPort before switching or selecting either shell.**
 The switch command/worker and both standalone launchers enforce this guard after
 the three-output failure below. There is no force/bypass flag.
