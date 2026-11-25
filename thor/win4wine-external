@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""Turn the external monitor on or off in a running win4wine standalone session.
+"""External monitor for a running win4wine standalone session, laptop style.
+
+Plugged in, DP-1 becomes the primary screen: the desktop, taskbar and open
+windows move to it and the upper panel becomes the second screen. Unplugged,
+they come back. Nothing is restarted.
 
 Only the upper panel plus DP-1 at no more than 1080p. DP-1 is switched back off
 if the display driver reports errors shortly after it is enabled.
 
-"desktop" moves the shell's desktop and taskbar to one of the two screens. It
-restarts the shell, closing the Windows programs running in it.
-
-"watch" does this on plug and unplug, in Windows 7 and XP sessions: it enables the
-monitor, and moves the desktop to it only while no Windows window is open.
+"watch" does this on plug and unplug, in Windows 7 and XP sessions.
+"desktop external" and "desktop handheld" swap the primary screen by hand.
 """
 import argparse
 import fcntl
@@ -21,18 +22,11 @@ import time
 from pathlib import Path
 
 UPPER, LOWER, EXTERNAL = 'DSI-2', 'DSI-1', 'DP-1'
-# DSI-2 is 1080x1920 rotated, at scale 1.5: 1280 logical pixels wide.
-POSITION = '1280,0'
 WATCH_SECONDS = 20
 # Consecutive one-second readings before a plug or unplug counts: DP links flap.
 SETTLE = 3
-# The supervisor gives up on a shell that ends three times within 120 s.
-RESTART_INTERVAL = 150
-# Win32 classes of the shell's own windows. Any other Windows window is the user's.
 # ReactOS has never driven a monitor here.
 AUTOMATIC_SHELLS = ('win7', 'xp')
-SHELL_CLASSES = {'Progman', 'WorkerW', 'Shell_TrayWnd', 'DV2ControlHost',
-                 'Win4WineStartButton', 'Desktop User Picture'}
 ERRORS = re.compile(
     r'failed to reserve hw resources|invalid DSPP|unable to find appropriate mixers'
     r'|\[dpu error\]|vblank timeout|flip_done timed out|commit wait timed out', re.I)
@@ -62,7 +56,7 @@ def kernel_errors(since):
 
 
 def session():
-    """The running supervisor's configuration, IPC directory and environment."""
+    """The running supervisor's configuration and IPC directory."""
     for process in Path('/proc').glob('[0-9]*'):
         try:
             command = (process / 'cmdline').read_bytes().decode().split('\0')
@@ -71,7 +65,7 @@ def session():
             variables = dict(v.split('=', 1) for v in
                              (process / 'environ').read_bytes().decode().split('\0') if '=' in v)
             config = json.loads(Path(command[command.index('--config') + 1]).read_text())
-            return config, Path(variables['WIN4WINE_IPC']), variables
+            return config, Path(variables['WIN4WINE_IPC'])
         except (OSError, ValueError, KeyError, IndexError):
             continue
     sys.exit('No running win4wine standalone session found.')
@@ -84,121 +78,54 @@ def primary_name():
         return ''
 
 
-def refresh_positions(env):
-    """Make Xwayland apply the screen positions for the current primary screen.
+def logical_width(output):
+    mode = next(m for m in output['modes'] if m.get('current'))
+    turned = str(output.get('transform')).endswith(('90', '270'))
+    return round(mode['height' if turned else 'width'] / output['scale'])
 
-    The compositor sends the new positions, but Xwayland holds them until the
-    output itself reports a change, so move each output by a pixel and back.
+
+def places(enabled, primary):
+    """Each enabled output's layout x: the primary at 0, the others to its right."""
+    x, result = 0, {}
+    for name in sorted(enabled, key=lambda n: n != primary):
+        result[name] = x
+        x += logical_width(enabled[name])
+    return result
+
+
+def arrange(env, primary):
+    """Make one output primary, moving the desktop and windows with it.
+
+    The compositor takes the primary's name from the session's IPC directory.
+    The layout has to change too, or windows stay on their screen. Xwayland
+    holds new positions until an output reports a change, so place each one a
+    pixel off first and then exactly, which also covers a lone output.
     """
-    places = [(n, o['position']['x'], o['position']['y'])
-              for n, o in outputs(env).items() if o.get('enabled')]
-    for offset in (1, 0):
-        command = ['wlr-randr']
-        for name, x, y in places:
-            command += ['--output', name, '--pos', f'{x},{y + offset}']
-        subprocess.run(command, env=env, check=True, timeout=30)
-        time.sleep(1)
-
-
-def set_primary(env, name):
+    enabled = {n: o for n, o in outputs(env).items() if o.get('enabled')}
+    if primary not in enabled:
+        sys.exit(f'{primary} is not enabled.')
     ipc = session()[1]
     temporary = ipc / 'primary.tmp'
-    temporary.write_text(name + '\n')
+    temporary.write_text(primary + '\n')
     temporary.replace(ipc / 'primary')
     time.sleep(1)  # for the compositor to read it
-    refresh_positions(env)
-
-
-def move_desktop(env, screen):
-    name = EXTERNAL if screen == 'external' else UPPER
-    if not outputs(env).get(name, {}).get('enabled'):
-        sys.exit(f'{name} is not enabled.')
-    config = session()[0]
-    set_primary(env, name)
-    # Explorer does not redo its desktop and taskbar for a new primary screen
-    # while running. The supervisor restarts the shell once its Wine server ends.
-    wineserver = Path(config['wine']).with_name('wineserver')
-    subprocess.run([str(wineserver), '-k'], env={**env, 'WINEPREFIX': config['prefix']},
-                   check=True, timeout=30)
-    print(f'Desktop moved to {name}; the shell is restarting.')
-
-
-def turn_off(env):
-    if primary_name() == EXTERNAL:
-        sys.exit('The desktop is on DP-1. Run "desktop handheld" first.')
-    disable(env)
+    for offset in (1, 0):
+        command = ['wlr-randr']
+        for name, x in places(enabled, primary).items():
+            command += ['--output', name, '--pos', f'{x},{offset}']
+        subprocess.run(command, env=env, check=True, timeout=30)
+        time.sleep(.5)
+    print(f'{primary} is the primary screen.', flush=True)
 
 
 def disable(env):
     subprocess.run(['wlr-randr', '--output', EXTERNAL, '--off'], env=env, check=True, timeout=30)
 
 
-def turn_on(env):
-    names = outputs(env)
-    if EXTERNAL not in names:
-        sys.exit('No monitor is detected on DP-1.')
-    if not names.get(UPPER, {}).get('enabled') or names.get(LOWER, {}).get('enabled'):
-        sys.exit('Expected the upper panel on and the lower panel off; this is not a '
-                 'win4wine session, or enabling DP-1 would drive three displays.')
-    modes = [m for m in names[EXTERNAL].get('modes', [])
-             if m['width'] <= 1920 and m['height'] <= 1080]
-    if not modes:
-        sys.exit('The monitor reports no mode at or below 1920x1080.')
-    mode = max(modes, key=lambda m: (m['width'] * m['height'], -abs(m['refresh'] - 60)))
-    # The watchdog depends on the kernel log: fail before enabling if it is unreadable.
-    since = int(time.time())
-    if not subprocess.check_output(['journalctl', '-k', '-b', '-n', '1', '-q'], timeout=10):
-        sys.exit('Cannot read the kernel log; refusing to enable DP-1 unguarded.')
-    command = ['wlr-randr', '--output', EXTERNAL, '--on',
-               '--mode', f"{mode['width']}x{mode['height']}@{mode['refresh']:.6f}Hz",
-               '--transform', 'normal', '--scale', '1', '--pos', POSITION]
-    print(f"Enabling {EXTERNAL} at {mode['width']}x{mode['height']}, "
-          f"{mode['refresh']:.3f} Hz; watching the kernel log for {WATCH_SECONDS} s.", flush=True)
-    healthy = False
-    try:
-        subprocess.run(command, env=env, check=True, timeout=30)
-        for _ in range(WATCH_SECONDS):
-            time.sleep(1)
-            found = kernel_errors(since)
-            if found:
-                print('Display driver errors:', *found[:10], sep='\n  ')
-                break
-        else:
-            now = outputs(env)
-            healthy = bool(now.get(EXTERNAL, {}).get('enabled') and now[UPPER].get('enabled'))
-    finally:
-        if not healthy:
-            disable(env)
-            print(f'{EXTERNAL} switched back off.')
-    if not healthy:
-        sys.exit(1)
-    print('Both displays stayed enabled with no driver errors. Check the picture by eye.')
-
-
-def users_windows(windows):
-    """Titles of the Windows windows, as (WM_CLASS, Win32 class, title), a restart would close."""
-    return [title or win32 or program for program, win32, title in windows
-            if '.exe' in program.lower() and win32 not in SHELL_CLASSES]
-
-
-def list_windows(env):
-    def xprop(*args):
-        return subprocess.check_output(['xprop', *args], env=env, text=True,
-                                       stderr=subprocess.DEVNULL, timeout=10)
-
-    def value(text, name):
-        found = re.search(rf'^{name}\(\w+\) = "(.*?)"(?:, |$)', text, re.M)
-        return found.group(1) if found else ''
-
-    windows = []
-    for window in re.findall(r'0x[0-9a-f]+', xprop('-root', '_NET_CLIENT_LIST')):
-        try:
-            text = xprop('-id', window, 'WM_CLASS', '_WIN4WINE_CLASS', '_NET_WM_NAME')
-        except subprocess.CalledProcessError:
-            continue  # closed meanwhile
-        windows.append((value(text, 'WM_CLASS'), value(text, '_WIN4WINE_CLASS'),
-                        value(text, '_NET_WM_NAME')))
-    return windows
+def turn_off(env):
+    if outputs(env).get(EXTERNAL, {}).get('enabled'):
+        arrange(env, UPPER)
+        disable(env)
 
 
 class Link:
@@ -228,49 +155,69 @@ def connected():
     return False
 
 
-def wait_for(condition, seconds):
-    for _ in range(seconds):
-        if condition():
-            return True
-        time.sleep(1)
-    return False
-
-
-def shell_ready():
+def turn_on(env):
+    """Enable DP-1 as the primary screen, and undo that on display errors."""
+    names = outputs(env)
+    if EXTERNAL not in names:
+        sys.exit('No monitor is detected on DP-1.')
+    if not names.get(UPPER, {}).get('enabled') or names.get(LOWER, {}).get('enabled'):
+        sys.exit('Expected the upper panel on and the lower panel off; this is not a '
+                 'win4wine session, or enabling DP-1 would drive three displays.')
+    if names[EXTERNAL].get('enabled'):
+        arrange(env, EXTERNAL)
+        return
+    modes = [m for m in names[EXTERNAL].get('modes', [])
+             if m['width'] <= 1920 and m['height'] <= 1080]
+    if not modes:
+        sys.exit('The monitor reports no mode at or below 1920x1080.')
+    mode = max(modes, key=lambda m: (m['width'] * m['height'], -abs(m['refresh'] - 60)))
+    # The watchdog depends on the kernel log: fail before enabling if it is unreadable.
+    since = int(time.time())
+    if not subprocess.check_output(['journalctl', '-k', '-b', '-n', '1', '-q'], timeout=10):
+        sys.exit('Cannot read the kernel log; refusing to enable DP-1 unguarded.')
+    # Clear of the other outputs, wherever an earlier arrangement left them.
+    right = max(o['position']['x'] + logical_width(o) for o in names.values() if o.get('enabled'))
+    command = ['wlr-randr', '--output', EXTERNAL, '--on',
+               '--mode', f"{mode['width']}x{mode['height']}@{mode['refresh']:.6f}Hz",
+               '--transform', 'normal', '--scale', '1', '--pos', f'{right},0']
+    print(f"Enabling {EXTERNAL} at {mode['width']}x{mode['height']}, "
+          f"{mode['refresh']:.3f} Hz; watching the kernel log for {WATCH_SECONDS} s.", flush=True)
+    healthy = False
     try:
-        status = Path(session()[0]['state']) / 'status.json'
-        return json.loads(status.read_text())['state'] == 'xp-shell'
-    except (OSError, ValueError, KeyError):
-        return False
+        subprocess.run(command, env=env, check=True, timeout=30)
+        arrange(env, EXTERNAL)
+        for _ in range(WATCH_SECONDS):
+            time.sleep(1)
+            found = kernel_errors(since)
+            if found:
+                print('Display driver errors:', *found[:10], sep='\n  ')
+                break
+            if not connected():
+                print('The monitor was removed again.')
+                return
+        else:
+            now = outputs(env)
+            healthy = bool(now.get(EXTERNAL, {}).get('enabled') and now[UPPER].get('enabled'))
+    finally:
+        # A monitor that was pulled out is left to the unplug handling.
+        if not healthy and connected():
+            try:
+                arrange(env, UPPER)
+            finally:
+                disable(env)
+                print(f'{EXTERNAL} switched back off.')
+    if not healthy:
+        sys.exit(1)
+    print('Both displays stayed enabled with no driver errors. Check the picture by eye.')
 
 
-def plugged(env, last_restart):
-    """Enable the monitor and move the desktop to it if that closes nothing."""
-    if not wait_for(lambda: EXTERNAL in outputs(env), 15):
-        sys.exit(f'The compositor does not list {EXTERNAL}.')
-    if not outputs(env)[EXTERNAL].get('enabled'):
-        turn_on(env)
-    if primary_name() == EXTERNAL:
-        return last_restart
-    if not wait_for(shell_ready, 90):
-        print('The shell is not ready; the desktop stays on the handheld.')
-        return last_restart
-    variables = session()[2]
-    open_windows = users_windows(list_windows({**env, 'DISPLAY': variables['DISPLAY']}))
-    if open_windows:
-        print('The desktop stays on the handheld, to keep open windows:', ', '.join(open_windows))
-    elif last_restart is not None and time.monotonic() - last_restart < RESTART_INTERVAL:
-        print('The shell restarted recently; the desktop stays on the handheld.')
-    else:
-        move_desktop(env, 'external')
-        return time.monotonic()
-    return last_restart
-
-
-def unplugged(env):
-    if primary_name() == EXTERNAL:
-        set_primary(env, UPPER)
-        print('Monitor removed; the handheld is the primary screen again.')
+def plugged(env):
+    for _ in range(15):
+        if EXTERNAL in outputs(env):
+            turn_on(env)
+            return
+        time.sleep(1)
+    sys.exit(f'The compositor does not list {EXTERNAL}.')
 
 
 def watch(env):
@@ -280,12 +227,11 @@ def watch(env):
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError:
         sys.exit('Another watcher is running.')
-    link, seen, last_restart = Link(), False, None
+    link, seen = Link(), False
     print(f'Watching {EXTERNAL}.', flush=True)
     while True:
         try:
             shell = session()[0].get('shell')
-            seen = True
         except SystemExit:
             if seen:
                 return
@@ -294,16 +240,20 @@ def watch(env):
         if shell not in AUTOMATIC_SHELLS:
             print(f'Automatic switching is limited to Windows 7 and XP, not {shell}.')
             return
+        # An earlier watcher may have left the monitor's arrangement behind.
+        stale = not seen and not connected() and primary_name() == EXTERNAL
+        seen = True
         change = link.update(connected())
-        if change is not None:
-            print(time.strftime('%F %T'), 'plugged' if change else 'unplugged', flush=True)
+        if change is not None or stale:
+            if change is not None:
+                print(time.strftime('%F %T'), 'plugged' if change else 'unplugged', flush=True)
             # A failure is not retried until the cable changes again.
             try:
                 if change:
-                    last_restart = plugged(env, last_restart)
+                    plugged(env)
                 else:
-                    unplugged(env)
-            except (SystemExit, OSError, KeyError, subprocess.SubprocessError) as error:
+                    arrange(env, UPPER)
+            except (SystemExit, OSError, KeyError, StopIteration, subprocess.SubprocessError) as error:
                 print(error)
             sys.stdout.flush()
         time.sleep(1)
@@ -323,7 +273,7 @@ def main():
     elif action == 'off':
         turn_off(env)
     elif action == 'desktop':
-        move_desktop(env, args.screen)
+        arrange(env, EXTERNAL if args.screen == 'external' else UPPER)
     elif action == 'watch':
         watch(env)
     else:
@@ -332,7 +282,9 @@ def main():
             state = 'off'
             if output.get('enabled'):
                 state = f"{current['width']}x{current['height']}" if current else 'on'
+                state += f" at {output['position']['x']},{output['position']['y']}"
             print(f'{name}: {state}')
+        print(f'primary: {primary_name() or "unknown"}')
 
 
 if __name__ == '__main__':
