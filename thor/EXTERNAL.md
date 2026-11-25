@@ -67,6 +67,24 @@ still refuse to start with it connected.
 - Not tried: ReactOS, monitor audio, suspend/resume, long-run stability, 4K
   (still excluded).
 
+## kanshi trial: worked, not yet adopted
+
+2026-11-24, XP, Dell, after a reboot: kanshi 1.9.0 (Fedora packages, unpacked
+into `~/.local/share/win4wine/kanshi/` with libscfg, vali and aml) did the whole
+job instead of `win4wine-external`. Three dock/undock cycles in the log, user
+confirming windows moved and clicks worked; the shell never restarted; no X,
+display-resource or USB-C errors.
+
+- One profile each for docked and handheld; the Dell is matched as
+  `"Dell Inc. DELL U3223QE *"`, so unknown displays match nothing and stay off.
+  DSI-1 is disabled in both. No pixel nudge was needed.
+- The shell's `primary` setting must be unset, so that the leftmost screen is
+  primary. In the trial this was done live by emptying the IPC `primary` file.
+- Lost compared with the script: switching DP-1 off on display-driver errors.
+
+**This lasted one session.** The startup scripts and shell configs are unchanged,
+so the next session runs `win4wine-external` again.
+
 ## Open problems: unplugging and the USB-C link
 
 Two causes of restarts on unplug were found and patched:
