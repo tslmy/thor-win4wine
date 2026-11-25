@@ -99,8 +99,8 @@ keeps the old DLL until it restarts.
 Verified in a headless session on a disposable copy of the prefix and Wine
 install, with synthetic X11 double-clicks: the old DLL reproduced the crash, the
 new one opened the Recycle Bin window. The live shell was restarted and mapped
-the new DLL. A physical double-click has not been confirmed. The 32-bit shells
-were not retested, and `test-win7-headless.py` does not cover this case.
+the new DLL. The user then confirmed on the device that the Recycle Bin opens.
+The 32-bit shells were not retested, and `test-win7-headless.py` does not cover this case.
 
 ## Aero: remaining blocker, not a theme checkbox
 
