@@ -3,7 +3,13 @@
 **2026-11-24, Win7, Dell U3223QE on DP-1 at 1920x1080/60 Hz, plus the upper
 panel.** The lower panel stays off. No display-driver errors were logged.
 The user saw the monitor come on; the final desktop layout was checked by
-compositor screenshots. XP and ReactOS were not tried.
+compositor screenshots. ReactOS was not tried.
+
+**Later that evening, XP:** switched from Win7 with the monitor unplugged, then
+replugged. Manual `on` and `desktop external` worked with no windows open and no
+display-driver errors, and the user confirmed XP on the monitor. The secondary
+handheld showed plain white. Only briefly observed; unplugging, replugging,
+open windows and automatic switching in XP are untested.
 
 ## Why a monitor gets no signal
 
@@ -14,9 +20,9 @@ when DisplayPort must be unplugged. A monitor connected afterwards is detected
 ## Automatic switching
 
 **Windows 7 only.** The XP and ReactOS sessions do not start it, and `watch`
-exits if run in them: neither has driven a monitor this way, and XP is where the
-[earlier display failure](XP.md) happened. Manual `on` still works there but is
-equally untried.
+exits if run in them. XP is where the [earlier display failure](XP.md) happened
+and has only had the manual test above; ReactOS has had none. Without a watcher,
+run `desktop handheld` before unplugging there.
 
 The Win7 session starts `win4wine-external watch`, which follows the DP-1
 connector (a state counts after three one-second readings). Its log is
