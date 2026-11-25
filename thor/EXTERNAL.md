@@ -8,8 +8,8 @@ compositor screenshots. ReactOS was not tried.
 **Later that evening, XP:** switched from Win7 with the monitor unplugged, then
 replugged. Manual `on` and `desktop external` worked with no windows open and no
 display-driver errors, and the user confirmed XP on the monitor. The secondary
-handheld showed plain white. Only briefly observed; unplugging, replugging,
-open windows and automatic switching in XP are untested.
+handheld showed plain white. Automatic switching was then enabled for XP; see
+below. Observed for minutes only.
 
 ## Why a monitor gets no signal
 
@@ -19,12 +19,11 @@ when DisplayPort must be unplugged. A monitor connected afterwards is detected
 
 ## Automatic switching
 
-**Windows 7 only.** The XP and ReactOS sessions do not start it, and `watch`
-exits if run in them. XP is where the [earlier display failure](XP.md) happened
-and has only had the manual test above; ReactOS has had none. Without a watcher,
-run `desktop handheld` before unplugging there.
+**Windows 7 and XP.** The ReactOS session does not start it, and `watch` exits if
+run there: ReactOS has never driven a monitor this way. Run `desktop handheld`
+before unplugging in ReactOS if you used the manual commands.
 
-The Win7 session starts `win4wine-external watch`, which follows the DP-1
+Each Win7 or XP session starts `win4wine-external watch`, which follows the DP-1
 connector (a state counts after three one-second readings). Its log is
 `external-watch.txt` in the session's state directory.
 
@@ -44,6 +43,12 @@ shell (compositor screenshots, no driver errors). That last run was triggered by
 restarting the watcher with the monitor connected, not by the cable. A session
 that starts the watcher itself is still untested: on 2026-11-24 it was started
 by hand with `systemd-run --user` in the running session.
+
+Tested on XP with the real cable, user confirming: unplug returned the desktop and
+open windows to the handheld; replug enabled the monitor and kept the desktop on
+the handheld while windows were open; replug with none open moved the desktop to
+the monitor. No kernel display errors. As on Win7, the watcher was started by
+hand in the running session; **starting from a fresh session is untested.**
 
 ## Manual use
 
@@ -91,6 +96,16 @@ the menu appeared before and not after. A running session picks the file up on
 
 ## Known problems
 
+- **XP shell restarted on an unplug, once.** The desktop was already on the
+  handheld and no windows were open, so the watcher did nothing; `xp-shell.log`
+  shows `X Error: BadWindow (X_UnmapWindow)` and the supervisor restarted the
+  shell. Cause unknown, not reproduced on purpose. Open windows would have been
+  lost. An earlier XP unplug with the desktop on the monitor did not do this.
+  The supervisor falls back after three shell exits in two minutes, and the
+  watcher's restart spacing counts only its own restarts.
+- The compositor log shows bursts of `connector DP-1: Atomic commit failed:
+  Device or resource busy` during XP use. No visible effect was reported; not
+  investigated.
 - A Control Panel window dragged to the secondary screen stayed there with its
   caption buttons off the right edge. Cause not investigated.
 

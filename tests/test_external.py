@@ -42,7 +42,7 @@ class OpenWindowsTest(unittest.TestCase):
 class WatchTest(unittest.TestCase):
     def test_other_shells_are_left_alone(self):
         watch = external['watch']
-        for shell in ('xp', 'reactos'):
+        for shell in ('reactos', None):
             def unexpected(*args):
                 self.fail(f'acted in a {shell} session')
             fakes = {'session': lambda: ({'shell': shell}, None, {}),

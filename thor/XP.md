@@ -58,7 +58,8 @@ sessions now enable a hotplugged monitor within those limits (XP and ReactOS do
 not); see
 [EXTERNAL.md](EXTERNAL.md).** Switching with DP connected is still untested.
 XP itself later drove the monitor at 1080p with the lower panel off, using the
-manual commands; the user confirmed the picture.
+manual commands; the user confirmed the picture. Automatic switching is now on
+for XP too; one unexplained shell restart on unplug is recorded there.
 
 **For now, disconnect DisplayPort before switching or selecting either shell.**
 The switch command/worker and both standalone launchers enforce this guard after

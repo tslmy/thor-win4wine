@@ -7,7 +7,7 @@ if the display driver reports errors shortly after it is enabled.
 "desktop" moves the shell's desktop and taskbar to one of the two screens. It
 restarts the shell, closing the Windows programs running in it.
 
-"watch" does this on plug and unplug, in Windows 7 sessions only: it enables the
+"watch" does this on plug and unplug, in Windows 7 and XP sessions: it enables the
 monitor, and moves the desktop to it only while no Windows window is open.
 """
 import argparse
@@ -29,6 +29,8 @@ SETTLE = 3
 # The supervisor gives up on a shell that ends three times within 120 s.
 RESTART_INTERVAL = 150
 # Win32 classes of the shell's own windows. Any other Windows window is the user's.
+# ReactOS has never driven a monitor here.
+AUTOMATIC_SHELLS = ('win7', 'xp')
 SHELL_CLASSES = {'Progman', 'WorkerW', 'Shell_TrayWnd', 'DV2ControlHost',
                  'Win4WineStartButton', 'Desktop User Picture'}
 ERRORS = re.compile(
@@ -289,8 +291,8 @@ def watch(env):
                 return
             time.sleep(1)  # the session is still starting
             continue
-        if shell != 'win7':
-            print(f'Automatic switching is limited to Windows 7, not {shell}.')
+        if shell not in AUTOMATIC_SHELLS:
+            print(f'Automatic switching is limited to Windows 7 and XP, not {shell}.')
             return
         change = link.update(connected())
         if change is not None:
