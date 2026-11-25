@@ -53,7 +53,8 @@ an eight-minute rollback, accepts the new session after ten seconds of stable
 software readiness, and rolls back on startup failure. **Software readiness is
 not proof of physical display health.** No permanent autologin/default change is made.
 
-**Upper+DP at 1080p has since worked inside a running Win7 session; see
+**Upper+DP at 1080p has since worked inside a running Win7 session, and sessions
+now enable a hotplugged monitor within those limits; see
 [EXTERNAL.md](EXTERNAL.md).** Switching with DP connected is still untested.
 
 **For now, disconnect DisplayPort before switching or selecting either shell.**

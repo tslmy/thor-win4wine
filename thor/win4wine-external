@@ -6,8 +6,12 @@ if the display driver reports errors shortly after it is enabled.
 
 "desktop" moves the shell's desktop and taskbar to one of the two screens. It
 restarts the shell, closing the Windows programs running in it.
+
+"watch" does this on plug and unplug: it enables the monitor, and moves the
+desktop to it only while no Windows window is open.
 """
 import argparse
+import fcntl
 import json
 import os
 import re
@@ -20,6 +24,13 @@ UPPER, LOWER, EXTERNAL = 'DSI-2', 'DSI-1', 'DP-1'
 # DSI-2 is 1080x1920 rotated, at scale 1.5: 1280 logical pixels wide.
 POSITION = '1280,0'
 WATCH_SECONDS = 20
+# Consecutive one-second readings before a plug or unplug counts: DP links flap.
+SETTLE = 3
+# The supervisor gives up on a shell that ends three times within 120 s.
+RESTART_INTERVAL = 150
+# Win32 classes of the shell's own windows. Any other Windows window is the user's.
+SHELL_CLASSES = {'Progman', 'WorkerW', 'Shell_TrayWnd', 'DV2ControlHost',
+                 'Win4WineStartButton', 'Desktop User Picture'}
 ERRORS = re.compile(
     r'failed to reserve hw resources|invalid DSPP|unable to find appropriate mixers'
     r'|\[dpu error\]|vblank timeout|flip_done timed out|commit wait timed out', re.I)
@@ -49,7 +60,7 @@ def kernel_errors(since):
 
 
 def session():
-    """The running supervisor's configuration and IPC directory."""
+    """The running supervisor's configuration, IPC directory and environment."""
     for process in Path('/proc').glob('[0-9]*'):
         try:
             command = (process / 'cmdline').read_bytes().decode().split('\0')
@@ -58,7 +69,7 @@ def session():
             variables = dict(v.split('=', 1) for v in
                              (process / 'environ').read_bytes().decode().split('\0') if '=' in v)
             config = json.loads(Path(command[command.index('--config') + 1]).read_text())
-            return config, Path(variables['WIN4WINE_IPC'])
+            return config, Path(variables['WIN4WINE_IPC']), variables
         except (OSError, ValueError, KeyError, IndexError):
             continue
     sys.exit('No running win4wine standalone session found.')
@@ -87,16 +98,21 @@ def refresh_positions(env):
         time.sleep(1)
 
 
-def move_desktop(env, screen):
-    name = EXTERNAL if screen == 'external' else UPPER
-    if not outputs(env).get(name, {}).get('enabled'):
-        sys.exit(f'{name} is not enabled.')
-    config, ipc = session()
+def set_primary(env, name):
+    ipc = session()[1]
     temporary = ipc / 'primary.tmp'
     temporary.write_text(name + '\n')
     temporary.replace(ipc / 'primary')
     time.sleep(1)  # for the compositor to read it
     refresh_positions(env)
+
+
+def move_desktop(env, screen):
+    name = EXTERNAL if screen == 'external' else UPPER
+    if not outputs(env).get(name, {}).get('enabled'):
+        sys.exit(f'{name} is not enabled.')
+    config = session()[0]
+    set_primary(env, name)
     # Explorer does not redo its desktop and taskbar for a new primary screen
     # while running. The supervisor restarts the shell once its Wine server ends.
     wineserver = Path(config['wine']).with_name('wineserver')
@@ -157,9 +173,140 @@ def turn_on(env):
     print('Both displays stayed enabled with no driver errors. Check the picture by eye.')
 
 
+def users_windows(windows):
+    """Titles of the Windows windows, as (WM_CLASS, Win32 class, title), a restart would close."""
+    return [title or win32 or program for program, win32, title in windows
+            if '.exe' in program.lower() and win32 not in SHELL_CLASSES]
+
+
+def list_windows(env):
+    def xprop(*args):
+        return subprocess.check_output(['xprop', *args], env=env, text=True,
+                                       stderr=subprocess.DEVNULL, timeout=10)
+
+    def value(text, name):
+        found = re.search(rf'^{name}\(\w+\) = "(.*?)"(?:, |$)', text, re.M)
+        return found.group(1) if found else ''
+
+    windows = []
+    for window in re.findall(r'0x[0-9a-f]+', xprop('-root', '_NET_CLIENT_LIST')):
+        try:
+            text = xprop('-id', window, 'WM_CLASS', '_WIN4WINE_CLASS', '_NET_WM_NAME')
+        except subprocess.CalledProcessError:
+            continue  # closed meanwhile
+        windows.append((value(text, 'WM_CLASS'), value(text, '_WIN4WINE_CLASS'),
+                        value(text, '_NET_WM_NAME')))
+    return windows
+
+
+class Link:
+    """A connector state that counts only after SETTLE equal readings."""
+
+    def __init__(self):
+        self.connected = self.reading = False
+        self.count = 0
+
+    def update(self, reading):
+        """The new state when it changes, otherwise None."""
+        self.count = self.count + 1 if reading == self.reading else 1
+        self.reading = reading
+        if self.count >= SETTLE and reading != self.connected:
+            self.connected = reading
+            return reading
+        return None
+
+
+def connected():
+    for status in Path('/sys/class/drm').glob(f'card*-{EXTERNAL}/status'):
+        try:
+            if status.read_text().strip() == 'connected':
+                return True
+        except OSError:
+            pass
+    return False
+
+
+def wait_for(condition, seconds):
+    for _ in range(seconds):
+        if condition():
+            return True
+        time.sleep(1)
+    return False
+
+
+def shell_ready():
+    try:
+        status = Path(session()[0]['state']) / 'status.json'
+        return json.loads(status.read_text())['state'] == 'xp-shell'
+    except (OSError, ValueError, KeyError):
+        return False
+
+
+def plugged(env, last_restart):
+    """Enable the monitor and move the desktop to it if that closes nothing."""
+    if not wait_for(lambda: EXTERNAL in outputs(env), 15):
+        sys.exit(f'The compositor does not list {EXTERNAL}.')
+    if not outputs(env)[EXTERNAL].get('enabled'):
+        turn_on(env)
+    if primary_name() == EXTERNAL:
+        return last_restart
+    if not wait_for(shell_ready, 90):
+        print('The shell is not ready; the desktop stays on the handheld.')
+        return last_restart
+    variables = session()[2]
+    open_windows = users_windows(list_windows({**env, 'DISPLAY': variables['DISPLAY']}))
+    if open_windows:
+        print('The desktop stays on the handheld, to keep open windows:', ', '.join(open_windows))
+    elif last_restart is not None and time.monotonic() - last_restart < RESTART_INTERVAL:
+        print('The shell restarted recently; the desktop stays on the handheld.')
+    else:
+        move_desktop(env, 'external')
+        return time.monotonic()
+    return last_restart
+
+
+def unplugged(env):
+    if primary_name() == EXTERNAL:
+        set_primary(env, UPPER)
+        print('Monitor removed; the handheld is the primary screen again.')
+
+
+def watch(env):
+    """Follow plug and unplug until the session's supervisor has gone."""
+    lock = open(Path(env['XDG_RUNTIME_DIR']) / 'win4wine-external.lock', 'w')
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        sys.exit('Another watcher is running.')
+    link, seen, last_restart = Link(), False, None
+    print(f'Watching {EXTERNAL}.', flush=True)
+    while True:
+        try:
+            session()
+            seen = True
+        except SystemExit:
+            if seen:
+                return
+            time.sleep(1)  # the session is still starting
+            continue
+        change = link.update(connected())
+        if change is not None:
+            print(time.strftime('%F %T'), 'plugged' if change else 'unplugged', flush=True)
+            # A failure is not retried until the cable changes again.
+            try:
+                if change:
+                    last_restart = plugged(env, last_restart)
+                else:
+                    unplugged(env)
+            except (SystemExit, OSError, KeyError, subprocess.SubprocessError) as error:
+                print(error)
+            sys.stdout.flush()
+        time.sleep(1)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=('on', 'off', 'status', 'desktop'))
+    parser.add_argument('action', choices=('on', 'off', 'status', 'desktop', 'watch'))
     parser.add_argument('screen', nargs='?', choices=('external', 'handheld'))
     args = parser.parse_args()
     action = args.action
@@ -172,6 +319,8 @@ def main():
         turn_off(env)
     elif action == 'desktop':
         move_desktop(env, args.screen)
+    elif action == 'watch':
+        watch(env)
     else:
         for name, output in outputs(env).items():
             current = next((m for m in output.get('modes', []) if m.get('current')), None)

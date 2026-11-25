@@ -11,9 +11,31 @@ Sessions start with `autoEnableOutputs=no` and enable outputs once, at startup,
 when DisplayPort must be unplugged. A monitor connected afterwards is detected
 (`/sys/class/drm/card1-DP-1/status`) but left disabled.
 
-## Use
+## Automatic switching
 
-On the Thor, or over SSH, after plugging the monitor in:
+Each standalone session starts `win4wine-external watch`, which follows the DP-1
+connector (a state counts after three one-second readings). Its log is
+`external-watch.txt` in the session's state directory.
+
+- **Plug in:** runs `on`. Then it moves the desktop to the monitor, restarting
+  the shell, only if no Windows window is open. A window counts unless its Win32
+  class is the desktop, taskbar or Start menu; unknown classes count, so XP or
+  ReactOS may simply never move. A program with no window at all is not detected
+  and would be closed by the restart. Otherwise the desktop stays put.
+- **Unplug:** makes the handheld primary again, without restarting anything.
+- A failure is not retried until the cable changes again. Automatic restarts are
+  at least 150 s apart, because the supervisor gives up after three in 120 s.
+- `off` by hand lasts until the next replug.
+
+Tested on Win7: unplug returned a normal desktop to the handheld, and replug
+enabled the monitor and kept the desktop on the handheld because a window was
+open. **The automatic move with no window open has not run on the device**, and
+neither has a session that started the watcher itself: on 2026-11-24 it was
+started by hand with `systemd-run --user` in the running session.
+
+## Manual use
+
+On the Thor, or over SSH:
 
 ```sh
 ~/.local/bin/win4wine-external on
@@ -33,7 +55,6 @@ On the Thor, or over SSH, after plugging the monitor in:
   desktop is on the monitor.
 - `status` lists the outputs.
 
-Run `on` again after each replug or new session; nothing watches for hotplug.
 Disconnect DisplayPort before switching shells or logging in again: the launchers
 still refuse to start with it connected.
 
@@ -46,11 +67,18 @@ other. `desktop` nudges each output's position by one pixel and back, then
 restarts the shell, which fixed it. The nudge was verified by hand before one
 restart; the finished `desktop` command was not rerun end to end afterwards.
 
+## Known problems
+
+- Right-clicking an area no Windows window covers (the secondary screen) opens
+  labwc's own menu, **Reconfigure / Exit**. Exit ends the session. The shipped
+  `menu.xml` defines an empty `root-menu`, and labwc 0.8.3 fills an empty root
+  menu with those two items (`init_rootmenu` in `src/menu/menu.c`). Not fixed.
+- A Control Panel window dragged to the secondary screen stayed there with its
+  caption buttons off the right edge. Cause not investigated.
+
 ## Not verified
 
 - With the desktop on the monitor, the secondary handheld showed wallpaper over
   only about two thirds of its width.
-- Unplugging while the desktop is on the monitor. If the layout looks wrong
-  afterwards, run `desktop handheld`.
 - `desktop handheld` after the fix, monitor audio, suspend/resume, long-run
   stability, 4K (still excluded; see [XP.md](XP.md)).

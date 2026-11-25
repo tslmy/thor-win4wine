@@ -17,7 +17,7 @@ defaults. Public history is redacted/anonymized; old commit IDs may not resolve.
 
 **External monitor, 2026-11-24 (evening):** upper panel plus DP-1 at 1080p worked
 in the running Win7 session, with the desktop moved to the monitor. A monitor
-plugged in after startup stays off until `win4wine-external on`. This supersedes
+plugged in after startup is enabled by `win4wine-external watch`. This supersedes
 the "DP unvalidated" notes below for that case only; see
 [thor/EXTERNAL.md](thor/EXTERNAL.md).
 
