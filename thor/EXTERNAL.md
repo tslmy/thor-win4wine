@@ -119,7 +119,10 @@ rlen=-110`; KWin reported `Modeset failed`. Bursts: 22:29:04-22:29:51 and
 22:30:54-22:33:04. These match the first three-output failure in [XP.md](XP.md).
 So the glasses problem is in Armada or its kernel display driver. Whether it is
 what reset the Thor in XP is not established. KWin identifies the glasses as
-`MRG`; the mode it attempted was not recorded. Not reported upstream.
+`MRG`; the mode it attempted was not recorded. Reported upstream as
+[armada#943](https://github.com/armada-os/armada/issues/943). A related
+[comment on armada#755](https://github.com/armada-os/armada/issues/755) traces
+XREAL "no signal" on an Odin 3 to a Type-C mux race; not checked on the Thor.
 Logs: `~/.local/state/win4wine-xp/xreal-plasma-2233/`.
 
 The
