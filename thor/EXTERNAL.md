@@ -40,15 +40,19 @@ Tested on Win7: unplug returned a normal desktop to the handheld; replug enabled
 the monitor and kept the desktop on the handheld while a window was open; with
 no window open, the watcher moved the desktop to the monitor and restarted the
 shell (compositor screenshots, no driver errors). That last run was triggered by
-restarting the watcher with the monitor connected, not by the cable. A session
-that starts the watcher itself is still untested: on 2026-11-24 it was started
-by hand with `systemd-run --user` in the running session.
+restarting the watcher with the monitor connected, not by the cable, and the
+watcher had been started by hand with `systemd-run --user`.
 
 Tested on XP with the real cable, user confirming: unplug returned the desktop and
 open windows to the handheld; replug enabled the monitor and kept the desktop on
 the handheld while windows were open; replug with none open moved the desktop to
-the monitor. No kernel display errors. As on Win7, the watcher was started by
-hand in the running session; **starting from a fresh session is untested.**
+the monitor. No kernel display errors. Those runs used a watcher started by hand.
+
+Fresh session, 2026-11-24: XP to Plasma and back with the monitor detached. The
+new XP session started its own watcher; plugging in then moved the desktop to
+the monitor with one shell restart and no kernel display errors, confirmed by
+the user. **A fresh Win7 session has not been tried**; it uses the same startup
+lines.
 
 ## Manual use
 
