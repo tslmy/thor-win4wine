@@ -16,7 +16,13 @@ untested proposals.
   desktop. Preserve SSH access and a tested route back to Armada Desktop or Gaming Mode.
 - Use separate configuration files for nested and standalone sessions. Do not
   enable real poweroff/reboot commands in the nested session.
-- Keep documentation current and commit only this session's changes using GitButler.
+- Keep documentation current and commit only this session's changes, using plain git.
+- This checkout is the public repository. Never commit a device address, key path,
+  login or personal name, email, serial number or capture. Commits use the
+  repository's anonymous identity (set in the local Git config; keep it). Run
+  `python3 tools/audit-public.py` before pushing.
+- Device connection settings are in `.env` (git-ignored; see `env.example`):
+  `ssh -i "$THOR_SSH_KEY" "$THOR_USER@$THOR_HOST"` after `set -a; . ./.env`.
 - XP/ReactOS now keep the lower panel disabled. Do not re-enable three outputs,
   remove the external-switching guard, or restore 4K external mode without a new
   protected test plan: the previous trial encountered DPU allocation failures and

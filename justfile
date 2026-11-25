@@ -1,4 +1,6 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
+# Your device's address and key live in .env (git-ignored); see env.example.
+set dotenv-load
 
 # Recipes run on a Linux/macOS build host with Docker; installation runs on the Thor.
 default:

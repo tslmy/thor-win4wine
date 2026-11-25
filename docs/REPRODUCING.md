@@ -15,15 +15,16 @@ Clone this repository and use a local filesystem with at least 25 GiB free;
 Wine builds and Docker images can need more. Source builds may take hours,
 especially under architecture translation. `THOR_JOBS` controls Wine parallelism.
 
+Put your connection settings in `.env`, which `just` loads and Git ignores:
+
 ```sh
+cp env.example .env   # then edit it
 just doctor
 just check
-export THOR_HOST=thor.local
-export THOR_USER=your-login
-# Optional: otherwise SSH uses your existing agent/config and known_hosts.
-export THOR_SSH_KEY="$HOME/.ssh/your-thor-key"
 just preflight
 ```
+
+Exported environment variables work too and take precedence.
 
 Substitute your real SSH hostname/alias and existing Linux login. No address,
 key filename, password or token is built into these recipes. SSH uses batch mode
