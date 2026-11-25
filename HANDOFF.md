@@ -15,6 +15,12 @@ defaults. Public history is redacted/anonymized; old commit IDs may not resolve.
 
 **For the user and Claude / the next agent. Updated 2026-11-23.**
 
+**External monitor, 2026-11-24 (evening):** upper panel plus DP-1 at 1080p worked
+in the running Win7 session, with the desktop moved to the monitor. A monitor
+plugged in after startup stays off until `win4wine-external on`. This supersedes
+the "DP unvalidated" notes below for that case only; see
+[thor/EXTERNAL.md](thor/EXTERNAL.md).
+
 **Controller as mouse, 2026-11-24:** right stick, R1 and R2 now act as a mouse in
 Plasma Desktop Mode and the three shells, via
 [thor-pad-mouse](https://github.com/tslmy/thor-pad-mouse) (local checkout

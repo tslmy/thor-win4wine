@@ -48,7 +48,7 @@ def install(stage, home=None):
             target.chmod(0o755 if path.read_text().startswith('#!') else 0o644)
     bins = home / '.local/bin'
     bins.mkdir(parents=True, exist_ok=True)
-    for name in ('win4wine-switch', 'reactos-standalone-session', 'xp-standalone-session', 'win7-standalone-session'):
+    for name in ('win4wine-switch', 'win4wine-external', 'reactos-standalone-session', 'xp-standalone-session', 'win7-standalone-session'):
         target = bins / name
         if target.exists() or target.is_symlink():
             raise SystemExit(f'Refusing existing command: {target}')

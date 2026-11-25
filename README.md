@@ -12,6 +12,7 @@ and guarded switching. Run `just` to list recipes; `just check` is device-free.
 > The lower panel stays off. Disconnect external DisplayPort before switching:
 > an earlier three-output trial encountered display-resource failures and an
 > unexplained reboot. Existing Gaming Mode/desktop defaults are not replaced.
+> To use a monitor after the shell is running, see [EXTERNAL.md](thor/EXTERNAL.md).
 
 ## Requirements
 
