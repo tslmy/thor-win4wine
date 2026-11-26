@@ -38,11 +38,15 @@ kanshi is not in Armada's image. `containers/native.Dockerfile` installs it, and
 the native build packs it with libscfg, vali and aml into
 `~/.local/share/win4wine/kanshi/`.
 
-Disconnect DisplayPort before switching shells or logging in again: the launchers
-still refuse to start with it connected. That guard now stands for the kernel reset
-in [Hard resets around DisplayPort](#hard-resets-around-displayport-cause-found-2026-11-25):
-a switch restarts SDDM, and the fbdev console then enables DP while the glasses
-re-assert hot-plug. Keep it until Armada's kernel carries the fix. Switch from a desktop session, not from
+Unplug the XREAL glasses before switching shells or logging in again: the switch
+command and the launchers refuse to start while they are connected (EDID maker `MRG`)
+or while a connected display has no readable EDID. The reason is the kernel reset in
+[Hard resets around DisplayPort](#hard-resets-around-displayport-cause-found-2026-11-25):
+a switch restarts SDDM, the fbdev console enables DP, and the glasses often fail that
+link training while they re-assert hot-plug. Other monitors may stay connected:
+on 2026-11-26 a switch from Plasma to XP with the Dell connected was accepted, XP's
+desktop filled the Dell at 4K (it was primary at login), and both panels and touch
+worked. Drop the check once Armada's kernel has the fix (armada#956). Switch from a desktop session, not from
 Gaming Mode: from Gaming Mode, SDDM showed its greeter instead of the trial
 autologin, and the switch rolled back after three minutes (2026-11-25).
 

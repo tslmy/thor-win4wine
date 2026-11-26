@@ -42,10 +42,10 @@ current desktop/apps, uses a temporary SDDM selection and an independent
 eight-minute rollback timer, then accepts after stable software readiness.
 The permanent Gaming Mode boot/default configuration remains unchanged.
 
-**Disconnect DisplayPort before switching.** All three launchers preserve that
-guard. DSI-1 and its touch device stay disabled; DSI-2 is 1080x1920/60 Hz,
-transform 270, scale 1.5. Startup enables approved outputs explicitly instead
-of briefly allocating all outputs. Do not restore 4K or three-output operation.
+**Unplug the XREAL glasses before switching** (superseded 2026-11-25/26: both panels
+and DP up to 4K now run; see [EXTERNAL.md](EXTERNAL.md#three-outputs-2026-11-25)). All
+three launchers refuse to start with the glasses connected. Startup enables the
+panels explicitly instead of briefly allocating all outputs.
 Read [XP.md](XP.md) for the prior display-resource failures and recovery evidence.
 
 The first Win7 physical launch lost a race with the outgoing XP session's lock.

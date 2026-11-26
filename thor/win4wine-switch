@@ -3,10 +3,15 @@
 set -euo pipefail
 [[ $# == 1 ]] || { echo 'Usage: win4wine-switch xp|reactos|win7' >&2; exit 2; }
 case "${1:-}" in xp|reactos|win7) variant=$1 ;; *) echo 'Usage: win4wine-switch xp|reactos|win7' >&2; exit 2;; esac
-for status in /sys/class/drm/card*-DP-*/status; do
-    [[ -r $status ]] || continue
-    if [[ $(cat "$status") == connected ]]; then
-        message='Disconnect the external monitor before switching shells. A three-output test hit a display-driver resource failure and an unexpected reboot; this configuration needs investigation.'
+# armada#953: a DP disable after a failed link training resets the SoC. XREAL
+# glasses (EDID maker MRG, 0x3647) often fail their first training and re-assert
+# hot-plug while SDDM restarts, so refuse with them connected. Other monitors may
+# stay connected; an unreadable EDID counts as glasses.
+for dp in /sys/class/drm/card*-DP-*; do
+    [[ $(cat "$dp/status" 2>/dev/null) == connected ]] || continue
+    maker=$(od -An -tx1 -j8 -N2 "$dp/edid" 2>/dev/null | tr -d ' \n')
+    if [[ -z $maker || $maker == 3647 ]]; then
+        message='Unplug the XREAL glasses first: with them connected, a shell switch can reset the Thor (armada#953). Other monitors can stay connected.'
         echo "$message" >&2
         if [[ -n ${DISPLAY:-}${WAYLAND_DISPLAY:-} ]] && command -v kdialog >/dev/null; then
             kdialog --error "$message" --title 'win4wine display safety guard' || true

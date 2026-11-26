@@ -108,7 +108,7 @@ can be black because ReactOS paints the wallpaper/taskbar on the primary panel
 only. They are not a second desktop shell or an automatic screen mirror.
 
 labwc starts with all outputs off; the startup helper enables both panels, and
-kanshi adds a known monitor later. Starting a session with DP connected is still
+kanshi adds a known monitor later. Starting a session with the XREAL glasses connected is still
 refused, because of the DP reset bug described in [EXTERNAL.md](EXTERNAL.md).
 
 See [STANDALONE.md](STANDALONE.md) for remaining integration checks and recovery.

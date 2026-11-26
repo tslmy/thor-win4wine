@@ -19,8 +19,8 @@ defaults. Public history is redacted/anonymized; old commit IDs may not resolve.
 kanshi adds the Dell at 3840x2160/60 Hz or the glasses at 1080p. Measured in ReactOS
 with the Dell. 4K60 needs the Dell's USB-C set to 4 DisplayPort lanes; the shells keep
 their desktop at the size the primary screen had at login, so at 4K it fills only part
-of the Dell. The launchers still refuse to start with DP connected, now only because of
-the DP reset bug (armada#953). Plasma's failure with three outputs is a KWin bug, not a
+of the Dell. The launchers now refuse to start only with the XREAL glasses connected,
+because of the DP reset bug (armada#953); a switch to XP with the Dell connected works. Plasma's failure with three outputs is a KWin bug, not a
 hardware limit. Details and limits: [thor/EXTERNAL.md](thor/EXTERNAL.md#three-outputs-2026-11-25).
 
 **External monitor, 2026-11-24 (evening):** in Win7 and XP, kanshi docks and

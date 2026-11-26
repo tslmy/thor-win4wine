@@ -4,9 +4,17 @@ base=$HOME/.local/share/win4wine
 state=$HOME/.local/state/win4wine-win7
 config=${XDG_CONFIG_HOME:-$HOME/.config}/win4wine/win7-standalone.json
 [[ -x $base/labwc/bin/labwc && -f $config ]] || { echo 'Win7 runtime/config missing.' >&2; exit 1; }
-for status in /sys/class/drm/card*-DP-*/status; do
-    [[ -r $status ]] || continue
-    [[ $(cat "$status") != connected ]] || { echo 'Disconnect DP before an unprotected session switch.' >&2; exit 1; }
+# armada#953: a DP disable after a failed link training resets the SoC. XREAL
+# glasses (EDID maker MRG, 0x3647) often fail their first training and re-assert
+# hot-plug while SDDM restarts, so refuse with them connected. Other monitors may
+# stay connected; an unreadable EDID counts as glasses.
+for dp in /sys/class/drm/card*-DP-*; do
+    [[ $(cat "$dp/status" 2>/dev/null) == connected ]] || continue
+    maker=$(od -An -tx1 -j8 -N2 "$dp/edid" 2>/dev/null | tr -d ' \n')
+    if [[ -z $maker || $maker == 3647 ]]; then
+        echo 'Unplug the XREAL glasses first: with them connected, a shell switch can reset the Thor (armada#953). Other monitors can stay connected.' >&2
+        exit 1
+    fi
 done
 : "${XDG_RUNTIME_DIR:?SDDM session required}"
 [[ -n ${XDG_SEAT:-} && -n ${XDG_VTNR:-} ]] || { echo 'Use an SDDM seat session, not SSH directly.' >&2; exit 1; }

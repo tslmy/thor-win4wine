@@ -28,8 +28,24 @@ manager = subprocess.check_output(['runuser', '-u', 'armada', '--', '/usr/bin/en
 if f'XDG_CURRENT_DESKTOP={identity}\n' in manager:
     print('That shell is already the active desktop; no switch needed.')
     raise SystemExit(0)
-if any(p.read_text().strip() == 'connected' for p in Path('/sys/class/drm').glob('card*-DP-*/status')):
-    raise SystemExit('Disconnect the external monitor before switching. Multi-output switching is gated after a display-driver failure and unexpected reboot.')
+def xreal_or_unknown_connected():
+    """armada#953: a DP disable after a failed link training resets the SoC. XREAL
+    glasses (EDID maker MRG, 0x3647) often fail their first training and re-assert
+    hot-plug while SDDM restarts. An unreadable EDID counts as glasses."""
+    for dp in Path('/sys/class/drm').glob('card*-DP-*'):
+        try:
+            if (dp / 'status').read_text().strip() != 'connected':
+                continue
+            edid = (dp / 'edid').read_bytes()
+        except OSError:
+            return True
+        if len(edid) < 10 or edid[8:10] == bytes([0x36, 0x47]):
+            return True
+    return False
+
+
+if xreal_or_unknown_connected():
+    raise SystemExit('Unplug the XREAL glasses first: with them connected, a shell switch can reset the Thor (armada#953). Other monitors can stay connected.')
 control = '/etc/win4wine/standalone-test-control.py'
 started = time.time()
 subprocess.run(['python3', control, 'begin', '--session', session], check=True)

@@ -57,18 +57,19 @@ not proof of physical display health.** No permanent autologin/default change is
 
 **Upper+DP at 1080p has since worked in running Win7 and XP sessions: kanshi
 docks and undocks the tested monitor. See [EXTERNAL.md](EXTERNAL.md).**
-Switching with DP connected is still untested.
+Switching with the Dell connected worked on 2026-11-26 (see EXTERNAL.md).
 
 **Switch from a desktop session, not straight from Gaming Mode.** On 2026-11-24,
 just after a reboot, `win4wine-switch xp` from Gaming Mode failed: labwc got
 `/dev/dri/card1: Device or resource busy`, and the rollback selected Plasma.
 Switching again from Plasma worked. Seen once.
 
-**For now, disconnect DisplayPort before switching or selecting either shell.**
-The switch command/worker and the standalone launchers enforce this guard. It was
-added after the three-output failure below; it now stands for the DP reset bug
-(armada#953), which an SDDM restart with the glasses connected can trigger. There is
-no force/bypass flag.
+**For now, unplug the XREAL glasses before switching or selecting a shell.** The
+switch command/worker and the standalone launchers enforce this. The guard was added
+after the three-output failure below for any DP display; since 2026-11-26 it covers
+only the glasses (and displays with no readable EDID), because it now stands for the
+DP reset bug (armada#953), which an SDDM restart with the glasses connected can
+trigger. There is no force/bypass flag.
 
 ## Revised display policy (2026-11-24, superseded 2026-11-25)
 
