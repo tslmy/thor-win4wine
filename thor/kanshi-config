@@ -1,23 +1,27 @@
 # Laptop-style docking in the Windows 7, XP and ReactOS sessions; see EXTERNAL.md.
 # The shells set no "primary", so the leftmost screen is Windows' primary one.
 # A profile applies only when exactly its outputs are connected, so an untested
-# display matches neither and stays off. The lower panel is never enabled, and
-# the monitor is held to 1080p.
+# display matches none and stays off.
+#
+# Layout (logical pixels): the monitor at x=0, the upper panel (1280x720) to its
+# right, the lower panel (827x720) centred beneath the upper one. The Dell runs
+# at its native 3840x2160 with scale 1: at scale 2 the Windows desktop filled only
+# a quarter of it. 4K60 needs 4 DisplayPort lanes (see EXTERNAL.md).
 
 profile docked {
-	output "Dell Inc. DELL U3223QE *" enable mode 1920x1080 position 0,0 scale 1 transform normal
-	output DSI-2 enable mode 1080x1920@60Hz position 1920,0 scale 1.5 transform 270
-	output DSI-1 disable
+	output "Dell Inc. DELL U3223QE *" enable mode 3840x2160@60Hz position 0,0 scale 1 transform normal
+	output DSI-2 enable mode 1080x1920@60Hz position 3840,0 scale 1.5 transform 270
+	output DSI-1 enable mode 1080x1240 position 4066,720 scale 1.5 transform 270
 }
 
 # XREAL One Pro glasses report no serial number; 60 Hz like the panel.
 profile glasses {
 	output "Nreal XREAL One Pro*" enable mode 1920x1080@60Hz position 0,0 scale 1 transform normal
 	output DSI-2 enable mode 1080x1920@60Hz position 1920,0 scale 1.5 transform 270
-	output DSI-1 disable
+	output DSI-1 enable mode 1080x1240 position 2146,720 scale 1.5 transform 270
 }
 
 profile handheld {
 	output DSI-2 enable mode 1080x1920@60Hz position 0,0 scale 1.5 transform 270
-	output DSI-1 disable
+	output DSI-1 enable mode 1080x1240 position 226,720 scale 1.5 transform 270
 }

@@ -8,6 +8,9 @@ variants passed guarded upper-only switching and live Linux-window tests.
 Software cursors are enabled and visible in each variant's upper-output screenshot;
 external mouse visibility remains unverified. See [WIN7.md](WIN7.md).
 
+**2026-11-25:** the lower panel is on again, and external monitors are no longer
+held to 1080p; see [EXTERNAL.md](EXTERNAL.md#three-outputs-2026-11-25).
+
 **Earlier policy update, 2026-11-24:** the user authorized disabling the lower panel
 during XP testing. Both standalone variants now use `autoEnableOutputs=no` and
 `configure-win4wine-outputs.py` to enable the upper panel explicitly and keep

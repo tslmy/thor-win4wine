@@ -1,0 +1,9 @@
+#!/bin/sh
+# Run KWin with the patched libkwin (see ../README) only while the image still has
+# the KWin it was built for; after an update, fall back to the image KWin.
+d=$HOME/.local/lib/kwin-test
+now=$(sha256sum /usr/lib64/libkwin.so.6.8.2 /usr/bin/kwin_wayland 2>/dev/null | awk '{print $1}')
+if [ -n "$now" ] && [ "$now" = "$(cat "$d/image-kwin.sha256" 2>/dev/null)" ]; then
+    LD_LIBRARY_PATH=$d exec "$d/real/kwin_wayland" "$@"
+fi
+exec /usr/bin/kwin_wayland "$@"

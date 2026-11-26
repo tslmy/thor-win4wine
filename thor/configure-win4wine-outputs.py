@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enable the upper panel and a conservative DP mode; never enable the lower panel."""
+"""Enable both internal panels at session start; kanshi then adds a known monitor."""
 import argparse
 import json
 import subprocess
@@ -19,17 +19,11 @@ else:
     command = ['wlr-randr', '--output', 'DSI-2', '--on', '--mode', '1080x1920@60Hz',
                '--transform', '270', '--scale', '1.5', '--pos', '0,0']
     if 'DSI-1' in names:
-        command += ['--output', 'DSI-1', '--off']
+        # The lower panel's only mode is 59.999 Hz, so name it without a rate.
+        command += ['--output', 'DSI-1', '--on', '--mode', '1080x1240',
+                    '--transform', '270', '--scale', '1.5', '--pos', '226,720']
     if 'DP-1' in names:
-        modes = [m for m in names['DP-1'].get('modes', []) if m['width'] <= 1920 and m['height'] <= 1080]
-        if modes:
-            preferred = next((m for m in modes if m['width'] == 1920 and m['height'] == 1080), None)
-            mode = preferred or max(modes, key=lambda m: m['width'] * m['height'])
-            command += ['--output', 'DP-1', '--on', '--mode', f"{mode['width']}x{mode['height']}",
-                        '--transform', 'normal', '--scale', '1', '--pos', '1280,0']
-            print(f"External output: conservative {mode['width']}x{mode['height']} mode")
-        else:
-            command += ['--output', 'DP-1', '--off']
-            print('External output left off: no reported mode at or below 1920x1080.')
+        # Leave a monitor connected at startup to kanshi, which knows the tested ones.
+        command += ['--output', 'DP-1', '--off']
 subprocess.run(command, check=True, timeout=30)
 print(subprocess.check_output(['wlr-randr', '--json'], text=True), end='')

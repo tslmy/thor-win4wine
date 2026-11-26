@@ -1,7 +1,9 @@
 # Windows XP shell on the Thor
 
 **Current result (2026-11-24): XP is running on the upper panel, at corrected
-120 DPI, with Silver/Metallic Luna. The lower panel is disabled.**
+120 DPI, with Silver/Metallic Luna.** Since 2026-11-25 the lower panel is on again
+in all three shells; see [EXTERNAL.md](EXTERNAL.md#three-outputs-2026-11-25), which
+also explains the three-output failure below.
 
 **Overnight update:** Win7 is now the active shell; XP remains available at the
 same corrected DPI/style. Win7 → XP → ReactOS → Win7 switches passed after adding
@@ -63,10 +65,15 @@ just after a reboot, `win4wine-switch xp` from Gaming Mode failed: labwc got
 Switching again from Plasma worked. Seen once.
 
 **For now, disconnect DisplayPort before switching or selecting either shell.**
-The switch command/worker and both standalone launchers enforce this guard after
-the three-output failure below. There is no force/bypass flag.
+The switch command/worker and the standalone launchers enforce this guard. It was
+added after the three-output failure below; it now stands for the DP reset bug
+(armada#953), which an SDDM restart with the glasses connected can trigger. There is
+no force/bypass flag.
 
-## Revised display policy
+## Revised display policy (2026-11-24, superseded 2026-11-25)
+
+Superseded: both panels are on again and kanshi handles DP, up to 4K
+([EXTERNAL.md](EXTERNAL.md#three-outputs-2026-11-25)). Kept for the record:
 
 The user explicitly allowed disabling the lower internal panel to simplify setup.
 This applies to the win4wine sessions and the recovery desktop, not the boot image

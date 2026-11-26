@@ -1,0 +1,52 @@
+From: thor-win4wine
+Subject: [PATCH] backends/drm: test color offloading with the pending modeset
+
+DrmOutput::tryKmsColorOffloading() tests the CRTC color pipeline with only
+its own pipeline. During a modeset of several outputs (a hotplug while
+another output is being enabled), that tests it against the current kernel
+state, not against the other outputs' pending state. On msm/dpu, a CRTC with
+CTM or GAMMA_LUT needs layer mixers that have a DSPP, and only some do: the
+test sees DSPP mixers that the pending modeset gives to another output, so
+it passes, and the combined commit in DrmGpu::doModeset() fails with
+-ENAVAIL on every retry. The output never lights up.
+
+Test the color pipeline together with all pipelines while a modeset is
+pending, so that the fallback to shader-based color is taken instead.
+---
+--- a/src/backends/drm/drm_output.cpp
++++ b/src/backends/drm/drm_output.cpp
+@@ -803,10 +803,24 @@
+         }
+         if (iccProfile->vcgt()) {
+             colorPipeline.add1DLUT(iccProfile->vcgt(), ColorspaceType::NonLinearRGB);
++        }
++    }
++    // While a modeset is pending, test the color pipeline together with the
++    // pending state of the other outputs. Tested alone, it is checked against
++    // the current kernel state, where hardware the pending modeset gives to
++    // another output can still look free (on msm, mixers with a DSPP); the
++    // combined modeset commit then fails on every retry.
++    QList<DrmPipeline *> testPipelines{m_pipeline};
++    if (m_gpu->needsModeset()) {
++        testPipelines.clear();
++        for (DrmOutput *output : m_gpu->drmOutputs()) {
++            if (!output->lease()) {
++                testPipelines.push_back(output->pipeline());
++            }
+         }
+     }
+     m_pipeline->setCrtcColorPipeline(colorPipeline);
+-    if (DrmPipeline::commitPipelines({m_pipeline}, m_gpu, DrmPipeline::CommitMode::Test)) {
++    if (DrmPipeline::commitPipelines(testPipelines, m_gpu, DrmPipeline::CommitMode::Test)) {
+         m_pipeline->applyPendingChanges();
+         next.layerBlendingColor = next.blendingColor;
+         m_needsShadowBuffer = false;
+@@ -819,7 +833,7 @@
+         ColorPipeline simplerPipeline(ValueRange{0, 1}, ColorspaceType::NonLinearRGB);
+         simplerPipeline.addMatrix(next.blendingColor->toOther(*encoding, RenderingIntent::AbsoluteColorimetricNoAdaptation), colorPipeline.currentOutputRange(), ColorspaceType::NonLinearRGB);
+         m_pipeline->setCrtcColorPipeline(simplerPipeline);
+-        if (DrmPipeline::commitPipelines({m_pipeline}, m_gpu, DrmPipeline::CommitMode::Test)) {
++        if (DrmPipeline::commitPipelines(testPipelines, m_gpu, DrmPipeline::CommitMode::Test)) {
+             m_pipeline->applyPendingChanges();
+             next.layerBlendingColor = next.blendingColor;
+             m_needsShadowBuffer = false;

@@ -15,6 +15,14 @@ defaults. Public history is redacted/anonymized; old commit IDs may not resolve.
 
 **For the user and Claude / the next agent. Updated 2026-11-23.**
 
+**Three outputs, 2026-11-25:** the shells now keep both panels on, with touch, and
+kanshi adds the Dell at 3840x2160/60 Hz or the glasses at 1080p. Measured in ReactOS
+with the Dell. 4K60 needs the Dell's USB-C set to 4 DisplayPort lanes; the shells keep
+their desktop at the size the primary screen had at login, so at 4K it fills only part
+of the Dell. The launchers still refuse to start with DP connected, now only because of
+the DP reset bug (armada#953). Plasma's failure with three outputs is a KWin bug, not a
+hardware limit. Details and limits: [thor/EXTERNAL.md](thor/EXTERNAL.md#three-outputs-2026-11-25).
+
 **External monitor, 2026-11-24 (evening):** in Win7 and XP, kanshi docks and
 undocks the Dell at 1080p beside the upper panel; the desktop and windows follow
 without a restart. Neither shell sets `primary` any more. This supersedes the "DP

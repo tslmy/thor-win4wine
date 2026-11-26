@@ -23,10 +23,10 @@ untested proposals.
   `python3 tools/audit-public.py` before pushing.
 - Device connection settings are in `.env` (git-ignored; see `env.example`):
   `ssh -i "$THOR_SSH_KEY" "$THOR_USER@$THOR_HOST"` after `set -a; . ./.env`.
-- XP/ReactOS now keep the lower panel disabled. Do not re-enable three outputs,
-  remove the external-switching guard, or restore 4K external mode without a new
-  protected test plan: the previous trial encountered DPU allocation failures and
-  an unexpected reboot. The DP-related resets are now explained by a kernel bug
-  (see `thor/EXTERNAL.md`, "Hard resets around DisplayPort").
+- The shells run three outputs (both panels and DP, up to 4K); `thor/EXTERNAL.md`,
+  "Three outputs", has the DPU budget and the limits. Keep the launchers' refusal to
+  start with DP connected until Armada's kernel has the DP PUSH_IDLE fix
+  (armada#953): until then, a failed DP link training followed by a disable or an
+  unplug resets the SoC. Keep `thor/capture-reset.sh` running during DP tests.
 - XP assets are proprietary user-provided media. Keep them and screenshots out
   of this repository; `.build/` is ignored for that purpose.

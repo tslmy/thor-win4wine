@@ -12,8 +12,9 @@ checkout, Claude's completed patched Wine 11.0 build, and the supplied
 **Current session:** standalone **Windows 7 Basic**, at **120 DPI**, on the upper
 panel only. XP / Silver Luna (120 DPI) and ReactOS (192 DPI) remain separately
 installed and switchable. All three use software cursors; upper-output screenshots
-show visible pointers, but physical DP validation is pending. The lower panel
-is disabled; boot defaults still select Gaming Mode. See [WIN7.md](WIN7.md) for
+show visible pointers. Both panels are on (the lower one was off from 2026-11-24 to
+2026-11-25), and kanshi adds a known external display; see [EXTERNAL.md](EXTERNAL.md).
+Boot defaults still select Gaming Mode. See [WIN7.md](WIN7.md) for
 Win7 results and the unfinished Aero effects, and [XP.md](XP.md) for safety limits.
 
 ## Open and close
@@ -106,10 +107,9 @@ The lower panel and external monitor are extended workspace. Their backgrounds
 can be black because ReactOS paints the wallpaper/taskbar on the primary panel
 only. They are not a second desktop shell or an automatic screen mirror.
 
-**This describes the earlier three-output ReactOS trial.** The current policy,
-requested while testing XP, disables the lower panel and starts labwc with all
-outputs off before explicitly enabling the upper panel. External-session switching
-is guarded until the revised conservative two-output setup is validated.
+labwc starts with all outputs off; the startup helper enables both panels, and
+kanshi adds a known monitor later. Starting a session with DP connected is still
+refused, because of the DP reset bug described in [EXTERNAL.md](EXTERNAL.md).
 
 See [STANDALONE.md](STANDALONE.md) for remaining integration checks and recovery.
 Do not run the standalone launcher directly over SSH. Ctrl+Alt+Backspace exits

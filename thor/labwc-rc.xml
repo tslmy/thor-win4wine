@@ -26,5 +26,4 @@
   </mouse>
   <touch deviceName="top_touchscreen" mapToOutput="DSI-2" mouseEmulation="yes" />
   <touch deviceName="bottom_touchscreen" mapToOutput="DSI-1" mouseEmulation="yes" />
-  <libinput><device category="bottom_touchscreen"><sendEventsMode>no</sendEventsMode></device></libinput>
 </labwc_config>
