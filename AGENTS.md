@@ -26,6 +26,7 @@ untested proposals.
 - XP/ReactOS now keep the lower panel disabled. Do not re-enable three outputs,
   remove the external-switching guard, or restore 4K external mode without a new
   protected test plan: the previous trial encountered DPU allocation failures and
-  an unexpected reboot. The precise reboot cause remains unconfirmed.
+  an unexpected reboot. The DP-related resets are now explained by a kernel bug
+  (see `thor/EXTERNAL.md`, "Hard resets around DisplayPort").
 - XP assets are proprietary user-provided media. Keep them and screenshots out
   of this repository; `.build/` is ignored for that purpose.

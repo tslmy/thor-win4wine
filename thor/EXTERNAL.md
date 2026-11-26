@@ -95,8 +95,8 @@ The supervisor falls back after three shell exits in two minutes.
 ## XREAL One Pro glasses
 
 They work in ReactOS through the `glasses` profile above, and in Plasma after the
-fix below. One unexplained hard reboot on 2026-11-25 (journal stops, empty pstore)
-came while labwc had them enabled, within seconds of an SDDM restart and an unplug,
+fix below. Hard reboots with them connected come from a DP driver bug, described in
+[Hard resets around DisplayPort](#hard-resets-around-displayport-cause-found-2026-11-25),
 so end a session with them unplugged.
 
 **In stock Plasma**, with no win4wine session or compositor running (Armada
@@ -112,8 +112,8 @@ three-output failure in [XP.md](XP.md). Reported as
 a different XREAL failure, in a driver the Thor does not load.
 
 **Earlier, in XP**, plugging them in was followed by a hard reboot. The journal
-ends at the preceding Dell removal, with no panic and empty pstore, so the cause
-is not established.
+ends at the preceding Dell removal, with no panic and empty pstore. It most likely
+hit the DP bug below, but that log was lost.
 
 Logs on the device, under `~/.local/state/win4wine-xp/`: `xreal-crash-20261124/`
 and `xreal-plasma-2233/`.
@@ -129,6 +129,62 @@ makes KWin do it in a shader instead. Then all three outputs and Night Light wor
 Each new external display needs the setting. Details are in a
 [comment on armada#943](https://github.com/armada-os/armada/issues/943#issuecomment-7182038303).
 labwc sets no CTM or gamma LUT, so it is not affected.
+
+## Hard resets around DisplayPort (cause found, 2026-11-25)
+
+**Cause.** A DP disable that follows a failed DP link training resets the SoC.
+`msm_dp_bridge_atomic_enable()` gives up on a failed training with the link clocks
+off. The next `msm_dp_bridge_atomic_disable()` still writes `PUSH_IDLE` to the link
+registers, an unclocked access. The machine resets with no oops and no panic, and
+pstore stays empty. Upstream fixed this in v7.3 with e249a6e2a130 ("drm/msm/dp: skip
+PUSH_IDLE when the link was never enabled"), first reported on Snapdragon X2 Elite.
+It carries no stable tag. Armada's kernel is 7.2.6 and does not include it.
+
+**Why the glasses hit it.** About a second after losing a signal, the XREAL One
+Pro drop hot-plug and re-assert it. An enable that lands in that window fails
+training with `-6`, and the next disable resets. Session changes do this
+on their own. During an SDDM restart, nothing holds the display, so the kernel's
+fbdev console (`msmdrmfb`) enables DP, at 640x480 because it misses the modes. It
+also lights the lower panel. This happens just as the glasses re-assert. That
+fits all three earlier reboots: a DSI-1 disable during a DP modeset loop, an
+unplug with an SDDM restart, and a plug-in after a Dell removal. Those logs were
+lost, though, so the fit is not proven.
+
+**Evidence.** Reproduced twice, on the same step both times, in Plasma with the
+glasses connected and the lower panel off:
+
+```sh
+kscreen-doctor output.DP-1.disable; sleep 0.96
+kscreen-doctor output.DP-1.enable;  sleep 0.2
+kscreen-doctor output.DP-1.disable
+```
+
+The streamed log ends with `link training #1 on phy 0 failed. ret=-6`, `Failed
+link training (rc=-104)`, DPU frame-done and vblank timeouts, then the unplug
+handler. After each reset the bootloader reported `PM: Reset by PSHOLD` / `Reset
+Type: Hard Reset`, as it did for the unexplained reboot before. That is a reset
+the SoC itself requested, not a PMIC fault. These survived, each tried once:
+`wlr-randr --output DP-1 --off` with the glasses plugged in, unplugging with DP on
+in ReactOS, an SDDM restart with DP on, and unplugging and plugging in under the
+fbdev console with SDDM stopped. Sixteen plain off/on cycles in Plasma also
+survived.
+
+**Until Armada carries the fix:** don't toggle DP off and on within a few
+seconds. Unplug before restarting SDDM or switching sessions (the win4wine
+launchers already require it). If an output just failed to come up, unplug
+instead of disabling it. Reported with a backport as
+[armada#953](https://github.com/armada-os/armada/issues/953). The backport is a one-line gate in
+`msm_dp_bridge_atomic_disable()`.
+
+**Capture.** [`capture-reset.sh`](capture-reset.sh) streams `dmesg`, the
+journal and a one-second heartbeat over SSH into `.build/reset-capture/`. It sets
+`drm.debug=0x100` (DP messages) until the next boot.
+`capture-reset.sh reason` prints the bootloader's reset cause after a reboot.
+It reads the XBL log at `0x81a00000` (`xbl-dt-log-merged-region`) through
+`/dev/mem`. On Armada without image changes there is nothing better: no
+`/dev/watchdog`, no ramoops region, no netconsole, no lockup detectors and
+`kernel.panic=0`. The journal on disk loses the last ~40 s before a reset, so
+stream it.
 
 ## Other findings
 
