@@ -7,6 +7,7 @@ state=$HOME/.local/state/win4wine-standalone
 finish() {
     result=$?
     [[ -z ${agent_pid:-} ]] || kill "$agent_pid" 2>/dev/null || true
+    [[ -z ${kanshi_pid:-} ]] || kill "$kanshi_pid" 2>/dev/null || true
     # End the compositor on both logoff and startup failure, including fast exits.
     if [[ -n ${LABWC_PID:-} ]]; then
         kill -TERM "$LABWC_PID" 2>/dev/null || true
@@ -22,6 +23,12 @@ agent=/usr/libexec/kf6/polkit-kde-authentication-agent-1
 if [[ -x $agent ]]; then
     "$agent" > "$state/polkit.log" 2>&1 &
     agent_pid=$!
+fi
+# Dock and undock an external monitor. Not *.log: the supervisor rotates those.
+if [[ -x $base/kanshi/bin/kanshi ]]; then
+    LD_LIBRARY_PATH="$base/kanshi/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+        "$base/kanshi/bin/kanshi" -c "$base/tools/kanshi-config" > "$state/kanshi.txt" 2>&1 &
+    kanshi_pid=$!
 fi
 python3 "$HOME/win4wine/session/supervisor.py" --config "$config" \
     >> "$state/supervisor-output.txt" 2>&1

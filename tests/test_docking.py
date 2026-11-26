@@ -14,7 +14,7 @@ def profiles():
 
 class DockingTest(unittest.TestCase):
     def test_lower_panel_is_disabled_in_every_profile(self):
-        self.assertEqual(sorted(profiles()), ['docked', 'handheld'])
+        self.assertEqual(sorted(profiles()), ['docked', 'glasses', 'handheld'])
         for outputs in profiles().values():
             self.assertEqual(outputs['DSI-1'], 'disable')
 
@@ -25,10 +25,17 @@ class DockingTest(unittest.TestCase):
         self.assertIn('position 1920,0', docked['DSI-2'])
         self.assertIn('position 0,0', profiles()['handheld']['DSI-2'])
 
+    def test_glasses_are_leftmost_like_the_monitor(self):
+        glasses = profiles()['glasses']
+        self.assertIn('mode 1920x1080@60Hz position 0,0', glasses['"Nreal XREAL One Pro*"'])
+        self.assertIn('position 1920,0', glasses['DSI-2'])
+
     def test_docking_shells_start_kanshi_and_pin_no_primary(self):
-        for shell in ('win7', 'xp'):
+        for shell in ('win7', 'xp', 'reactos'):
             self.assertIn('kanshi-config', (THOR / f'{shell}-standalone-start').read_text())
-            self.assertNotIn("'primary'", (THOR / f'create-{shell}-standalone.py').read_text())
+        for creator in ('create-win7-standalone.py', 'create-xp-standalone.py', 'prepare-shell.py'):
+            self.assertNotIn("'primary'", (THOR / creator).read_text())
+        self.assertNotIn('primary', (THOR / 'reactos-standalone.json').read_text())
 
 
 if __name__ == '__main__':

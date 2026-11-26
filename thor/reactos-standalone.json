@@ -10,6 +10,5 @@
   "cursor_theme": null,
   "shutdown_command": null,
   "reboot_command": null,
-  "readiness_timeout": 90,
-  "primary": "DSI-2"
+  "readiness_timeout": 90
 }

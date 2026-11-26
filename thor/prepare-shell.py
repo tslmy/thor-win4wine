@@ -79,7 +79,6 @@ def main(shell):
                     'locale': 'en_US.UTF-8', 'linux_font': 'Tahoma', 'linux_menu': True,
                     'welcome_screen': False, 'cursor_theme': 'win4wine-reactos',
                     'shutdown_command': None, 'reboot_command': None, 'readiness_timeout': 120,
-                    'primary': 'DSI-2',
                 }, indent=2) + '\n')
             finally:
                 subprocess.run([str(wine.with_name('wineserver')), '-k'], env=env, timeout=30, stdout=log, stderr=log)

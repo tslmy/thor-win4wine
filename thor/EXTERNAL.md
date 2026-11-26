@@ -1,31 +1,35 @@
 # External monitor in a running shell
 
-Laptop style, in the Windows 7 and XP sessions: plug in, and the monitor becomes
+Laptop style, in the Windows 7, XP and ReactOS sessions: plug in, and the monitor becomes
 the primary screen. The desktop, taskbar and open windows move to it, and the
 upper panel becomes the second screen. Unplug, and they come back. Nothing is
 restarted. The lower panel stays off. Measured on 2026-11-24 with a Dell U3223QE
-on DP-1 at 1920x1080/60 Hz.
+on DP-1 at 1920x1080/60 Hz, and on 2026-11-25 with XREAL One Pro glasses in ReactOS.
 
 ## How it works
 
 Sessions start labwc with `autoEnableOutputs=no`, so by itself a monitor
 connected later stays disabled. That was deliberate, after the three-output
 failure in [XP.md](XP.md). [kanshi](https://sr.ht/~emersion/kanshi/), started by
-the Win7 and XP startup scripts, applies [`kanshi-config`](kanshi-config) when
+the Win7, XP and ReactOS startup scripts, applies [`kanshi-config`](kanshi-config) when
 the set of connected outputs changes. It logs to `kanshi.txt` in the session's
 state directory.
 
 - **docked:** the Dell at layout x=0, the upper panel to its right.
+- **glasses:** XREAL One Pro (`Nreal XREAL One Pro*`: they report no serial) at
+  1920x1080/60 Hz, x=0, the upper panel to their right.
 - **handheld:** the upper panel at x=0.
 - The lower panel is disabled in both; the monitor is held to 1080p.
 - Only listed monitors match. Any other display matches no profile and stays off.
   To add one, copy the `docked` profile with its `make model *` description
   (`wlr-randr` prints it) and mind the risks below.
-- The Win7 and XP shell settings have **no `primary`**, so Windows' primary screen
+- The Win7, XP and ReactOS shell settings have **no `primary`**, so Windows' primary screen
   is the leftmost one. Both screens are 1920x1080 in pixels, so Windows sees the
   same geometry either way and has nothing to rearrange.
 
-ReactOS does not start kanshi and keeps `primary`; it has never driven a monitor.
+ReactOS used to pin `primary` to DSI-2 and start no kanshi, so a display plugged in
+later stayed off. An existing ReactOS install keeps `"primary"` in
+`~/.config/win4wine/reactos-standalone.json` until it is removed by hand.
 
 kanshi is not in Armada's image. `containers/native.Dockerfile` installs it, and
 the native build packs it with libscfg, vali and aml into
@@ -33,7 +37,8 @@ the native build packs it with libscfg, vali and aml into
 
 Disconnect DisplayPort before switching shells or logging in again: the launchers
 still refuse to start with it connected. Switch from a desktop session, not from
-Gaming Mode.
+Gaming Mode: from Gaming Mode, SDDM showed its greeter instead of the trial
+autologin, and the switch rolled back after three minutes (2026-11-25).
 
 Nothing switches the monitor off on display-driver errors.
 
@@ -44,7 +49,11 @@ Nothing switches the monitor off on display-driver errors.
 - Win7, in a fresh session that started kanshi itself: two cycles, user
   confirming the same.
 - In both: no shell restart, no X, display-resource or USB-C errors. Short runs.
-- Not tried: ReactOS, monitor audio, suspend/resume, long-run stability, 4K
+- ReactOS with XREAL One Pro, fresh session: one plug-in and one unplug. The
+  user confirmed the desktop and taskbar on the glasses; the shell did not restart
+  and the kernel logged no DPU or PHY errors.
+- Not tried: the Dell in ReactOS, the glasses in XP or Win7 since the profile was
+  added, monitor audio, suspend/resume, long-run stability, 4K
   (still excluded), a fresh install from the updated build recipe (the packaging
   step was run on its own and kanshi's libraries resolved).
 
@@ -83,7 +92,12 @@ Unexplained:
 
 The supervisor falls back after three shell exits in two minutes.
 
-## XREAL One Pro glasses: do not plug them in
+## XREAL One Pro glasses
+
+They work in ReactOS through the `glasses` profile above, and in Plasma after the
+fix below. One unexplained hard reboot on 2026-11-25 (journal stops, empty pstore)
+came while labwc had them enabled, within seconds of an SDDM restart and an unplug,
+so end a session with them unplugged.
 
 **In stock Plasma**, with no win4wine session or compositor running (Armada
 20261109.dfed5d6, kernel 7.2.6), both plug-ins gave "no signal" and froze touch
@@ -103,6 +117,18 @@ is not established.
 
 Logs on the device, under `~/.local/state/win4wine-xp/`: `xreal-crash-20261124/`
 and `xreal-plasma-2233/`.
+
+**Cause in Plasma, and the fix (2026-11-25).** SM8550's DPU has six layer mixers,
+and only LM_0–3 have a DSPP. The two panels use four mixers, and a 1920-wide DP mode
+needs two more, so DP gets LM_4/5. The kernel reserves DSPPs only for a CRTC with a
+`CTM` or `GAMMA_LUT` (`dpu_crtc_get_topology`). KWin's default colour setting
+("Prefer efficiency") puts Night Light and colour transforms there, so the request
+can never be met. Setting the external display to **Prefer color accuracy**
+(`"colorPowerTradeoff": "PreferAccuracy"` in `~/.config/kwinoutputconfig.json`)
+makes KWin do it in a shader instead. Then all three outputs and Night Light work.
+Each new external display needs the setting. Details are in a
+[comment on armada#943](https://github.com/armada-os/armada/issues/943#issuecomment-7182038303).
+labwc sets no CTM or gamma LUT, so it is not affected.
 
 ## Other findings
 
